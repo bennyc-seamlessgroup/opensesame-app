@@ -18,7 +18,7 @@ export default function ProfileMembershipPage() {
           </Link>
         </Button>
         <div>
-          <p className="text-lg font-semibold text-foreground">{tx("Membership Cards")}</p>
+          <p className="text-lg font-semibold text-foreground">{tx("NFT Cards")}</p>
           <p className="text-xs text-muted-foreground">{tx("Restaurant cards, offers, and benefits")}</p>
         </div>
       </div>

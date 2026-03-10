@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Bookmark, ChevronDown, MapPin, Scan, SlidersHorizontal } from "lucide-react";
+import { Bookmark, ChevronDown, ChevronLeft, MapPin, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search/search-bar";
 import { SearchQuickSheet } from "@/components/search/search-quick-sheet";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { user } from "@/lib/mock-data";
+import { HONG_KONG_LOCATION_OPTIONS } from "@/lib/hk-locations";
 import { useI18n } from "@/lib/i18n";
 import {
   DEFAULT_SEARCH_FILTERS,
@@ -25,7 +25,8 @@ export function AppTopHeader() {
   const searchParams = useSearchParams();
   const isAiPage = pathname === "/ai";
   const isExplorePage = pathname === "/explore";
-  const hideHeader = pathname.startsWith("/orders") || pathname.startsWith("/wallet") || pathname.startsWith("/profile");
+  const isRootTabPage = pathname === "/orders" || pathname === "/wallet" || pathname === "/profile" || pathname === "/";
+  const isInnerPage = !isAiPage && !isExplorePage && !isRootTabPage;
   const currentLocation = user.preferences.areas[0] || "Current Location";
   const [aiFilters, setAiFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS);
   const [aiSheetOpen, setAiSheetOpen] = useState(false);
@@ -73,7 +74,7 @@ export function AppTopHeader() {
   const exploreLocationLabel = exploreFilters.area || currentLocation;
 
   const exploreAreaOptions = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(HONG_KONG_LOCATION_OPTIONS);
     for (const area of user.preferences.areas) if (area) set.add(area);
     if (currentLocation) set.add(currentLocation);
     return Array.from(set);
@@ -85,7 +86,7 @@ export function AppTopHeader() {
     router.push(suffix ? `/explore?${suffix}` : "/explore");
   };
 
-  if (hideHeader) return null;
+  if (isRootTabPage) return null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85">
@@ -207,17 +208,25 @@ export function AppTopHeader() {
               </SheetContent>
             </Sheet>
           </div>
+        ) : isInnerPage ? (
+          <div className="flex w-full items-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full"
+              onClick={() => {
+                if (window.history.length > 1) router.back();
+                else router.push("/explore");
+              }}
+              aria-label={tx("Back")}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+          </div>
         ) : (
-          <h1 className="text-base font-semibold tracking-tight text-foreground">OpenSesame</h1>
+          <div />
         )}
-
-        {!isAiPage && !isExplorePage ? (
-          <Button asChild variant="secondary" size="icon" className="h-8 w-8 rounded-full" aria-label="Pay / Verify QR">
-            <Link href="/pay">
-              <Scan className="h-4 w-4" />
-            </Link>
-          </Button>
-        ) : null}
       </div>
     </header>
   );

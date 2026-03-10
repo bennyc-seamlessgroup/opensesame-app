@@ -1,6 +1,4 @@
 "use client";
-
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SectionHeader } from "@/components/section-header";
@@ -10,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useI18n } from "@/lib/i18n";
+import { HONG_KONG_LOCATION_OPTIONS } from "@/lib/hk-locations";
 import { restaurants } from "@/lib/mock-data";
 import {
   DEFAULT_SEARCH_FILTERS,
@@ -32,7 +31,8 @@ export function AdvancedSearchClient({ initialQuery }: { initialQuery: string })
   const [filters, setFilters] = useState<SearchFilters>(initial || DEFAULT_SEARCH_FILTERS);
 
   const areaOptions = useMemo(() => {
-    const set = new Set(restaurants.map((r) => r.area).filter(Boolean));
+    const set = new Set<string>(HONG_KONG_LOCATION_OPTIONS);
+    for (const area of restaurants.map((r) => r.area).filter(Boolean)) set.add(area);
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, []);
 
@@ -49,11 +49,6 @@ export function AdvancedSearchClient({ initialQuery }: { initialQuery: string })
       <SectionHeader
         title={tx("Advanced Search")}
         subtitle={appliedSummary ? tx(appliedSummary) : tx("更多條件（demo）")}
-        action={
-          <Button asChild variant="secondary" size="sm" className="h-8 rounded-lg">
-            <Link href="/explore">{tx("Back")}</Link>
-          </Button>
-        }
       />
 
       <Card className="border-border/80">

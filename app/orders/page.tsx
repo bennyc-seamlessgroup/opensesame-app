@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ClipboardList, CreditCard, PencilLine } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronRight, ClipboardList, CreditCard, PencilLine } from "lucide-react";
 import { SectionHeader } from "@/components/section-header";
 import { PaymentPill, OrderStatusPill } from "@/components/status-pills";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { cn, formatDateTime } from "@/lib/utils";
 
 export default function OrdersPage() {
   const { tx } = useI18n();
+  const router = useRouter();
   const [segment, setSegment] = useState<"bookings" | "takeaway">("bookings");
   const { bookings, orders, reviews } = useAppState();
 
@@ -115,7 +117,7 @@ export default function OrdersPage() {
 
   const getBookingSummary = (booking: (typeof bookings)[number]) => {
     if (booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID") {
-      return tx("支付訂金後先會為你保留座位，亦可減少 no-show。");
+      return tx("支付訂金後先會為你保留座位。");
     }
     if (booking.status === "CONFIRMED") {
       return tx("已預留座位，到時到店即可。");
@@ -212,7 +214,11 @@ export default function OrdersPage() {
                         : { href: `/orders/booking/${booking.id}`, label: tx("查看詳情"), Icon: CreditCard, variant: "outline" as const };
 
                   return (
-                    <Card key={booking.id} className="border-border/80">
+                    <Card
+                      key={booking.id}
+                      className="cursor-pointer border-border/80 transition hover:border-border"
+                      onClick={() => router.push(`/orders/booking/${booking.id}`)}
+                    >
                       <CardContent className="space-y-3 p-3">
                         <div className="flex gap-3">
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border/70">
@@ -221,7 +227,10 @@ export default function OrdersPage() {
                             ) : null}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                            </div>
                             <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
                             <p className="mt-2 text-xs leading-5 text-muted-foreground">{getBookingSummary(booking)}</p>
                             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -231,21 +240,13 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button asChild size="sm" variant={primary.variant} className="h-9 gap-2 rounded-xl">
                             <Link href={primary.href}>
                               <primary.Icon className="h-4 w-4" />
                               {primary.label}
                             </Link>
                           </Button>
-                          <Button asChild size="sm" variant="outline" className="h-9 rounded-xl">
-                            <Link href={`/orders/booking/${booking.id}`}>{tx("查看詳情")}</Link>
-                          </Button>
-                          {restaurant ? (
-                            <Button asChild size="sm" variant="ghost" className="h-9 rounded-xl">
-                              <Link href={`/restaurant/${restaurant.id}?mode=book`}>{tx("Restaurant")}</Link>
-                            </Button>
-                          ) : null}
                         </div>
                       </CardContent>
                     </Card>
@@ -262,17 +263,21 @@ export default function OrdersPage() {
                 {bookingSections.upcoming.map((booking) => {
                   const restaurant = restaurants.find((item) => item.id === booking.restaurantId);
                   return (
-                    <Card key={booking.id} className="border-border/80">
+                    <Card
+                      key={booking.id}
+                      className="cursor-pointer border-border/80 transition hover:border-border"
+                      onClick={() => router.push(`/orders/booking/${booking.id}`)}
+                    >
                       <CardContent className="space-y-2 p-3">
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                            </div>
                             <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
                             <p className="mt-1 text-xs leading-5 text-muted-foreground">{getBookingSummary(booking)}</p>
                           </div>
-                          <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
-                            <Link href={`/orders/booking/${booking.id}`}>{tx("查看詳情")}</Link>
-                          </Button>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           <OrderStatusPill status={booking.status} />
@@ -297,17 +302,21 @@ export default function OrdersPage() {
                     {bookingSections.history.map((booking) => {
                       const restaurant = restaurants.find((item) => item.id === booking.restaurantId);
                       return (
-                        <Card key={booking.id} className="border-border/80">
+                        <Card
+                          key={booking.id}
+                          className="cursor-pointer border-border/80 transition hover:border-border"
+                          onClick={() => router.push(`/orders/booking/${booking.id}`)}
+                        >
                           <CardContent className="space-y-2 p-3">
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                                </div>
                                 <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
                                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{getBookingSummary(booking)}</p>
                               </div>
-                              <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
-                                <Link href={`/orders/booking/${booking.id}`}>{tx("查看詳情")}</Link>
-                              </Button>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
                               <OrderStatusPill status={booking.status} />
@@ -354,7 +363,11 @@ export default function OrdersPage() {
                         : { href: `/orders/takeaway/${order.id}`, label: tx("查看詳情"), Icon: CreditCard, variant: "outline" as const };
 
                   return (
-                    <Card key={order.id} className="border-border/80">
+                    <Card
+                      key={order.id}
+                      className="cursor-pointer border-border/80 transition hover:border-border"
+                      onClick={() => router.push(`/orders/takeaway/${order.id}`)}
+                    >
                       <CardContent className="space-y-3 p-3">
                         <div className="flex gap-3">
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border/70">
@@ -363,7 +376,10 @@ export default function OrdersPage() {
                             ) : null}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                            </div>
                             <p className="text-xs text-muted-foreground">
                               {order.items.length} {tx("項")} • {tx("小計")} {order.subtotal} $OSM
                             </p>
@@ -375,21 +391,13 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button asChild size="sm" variant={primary.variant} className="h-9 gap-2 rounded-xl">
                             <Link href={primary.href}>
                               <primary.Icon className="h-4 w-4" />
                               {primary.label}
                             </Link>
                           </Button>
-                          <Button asChild size="sm" variant="outline" className="h-9 rounded-xl">
-                            <Link href={`/orders/takeaway/${order.id}`}>{tx("查看詳情")}</Link>
-                          </Button>
-                          {restaurant ? (
-                            <Button asChild size="sm" variant="ghost" className="h-9 rounded-xl">
-                              <Link href={`/restaurant/${restaurant.id}?mode=takeaway`}>{tx("Restaurant")}</Link>
-                            </Button>
-                          ) : null}
                         </div>
                       </CardContent>
                     </Card>
@@ -406,19 +414,23 @@ export default function OrdersPage() {
                 {takeawaySections.inProgress.map((order) => {
                   const restaurant = restaurants.find((item) => item.id === order.restaurantId);
                   return (
-                    <Card key={order.id} className="border-border/80">
+                    <Card
+                      key={order.id}
+                      className="cursor-pointer border-border/80 transition hover:border-border"
+                      onClick={() => router.push(`/orders/takeaway/${order.id}`)}
+                    >
                       <CardContent className="space-y-2 p-3">
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                            </div>
                             <p className="text-xs text-muted-foreground">
                               {order.items.length} {tx("項")} • {tx("小計")} {order.subtotal} $OSM
                             </p>
                             <p className="mt-1 text-xs leading-5 text-muted-foreground">{getTakeawaySummary(order)}</p>
                           </div>
-                          <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
-                            <Link href={`/orders/takeaway/${order.id}`}>{tx("查看詳情")}</Link>
-                          </Button>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           <OrderStatusPill status={order.status} />
@@ -443,19 +455,23 @@ export default function OrdersPage() {
                     {takeawaySections.history.map((order) => {
                       const restaurant = restaurants.find((item) => item.id === order.restaurantId);
                       return (
-                        <Card key={order.id} className="border-border/80">
+                        <Card
+                          key={order.id}
+                          className="cursor-pointer border-border/80 transition hover:border-border"
+                          onClick={() => router.push(`/orders/takeaway/${order.id}`)}
+                        >
                           <CardContent className="space-y-2 p-3">
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                   {order.items.length} {tx("項")} • {tx("小計")} {order.subtotal} $OSM
                                 </p>
                                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{getTakeawaySummary(order)}</p>
                               </div>
-                              <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
-                                <Link href={`/orders/takeaway/${order.id}`}>{tx("查看詳情")}</Link>
-                              </Button>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
                               <OrderStatusPill status={order.status} />

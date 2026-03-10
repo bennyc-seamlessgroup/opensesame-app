@@ -130,7 +130,7 @@ export function AiFoodSuggestionCard({
 
         <div className="border-t border-border/70 pt-3">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <Link href={`/user/${review.userId}`} className="flex items-center gap-2">
               {review.userAvatar ? (
                 <Image
                   src={withVersion(review.userAvatar)}
@@ -150,7 +150,7 @@ export function AiFoodSuggestionCard({
                 </div>
                 <p className="text-xs text-muted-foreground">{formatDateTime(review.createdAt)}</p>
               </div>
-            </div>
+            </Link>
 
             <StarRating value={avgRating} readOnly size="sm" />
             <div className="space-y-1.5">

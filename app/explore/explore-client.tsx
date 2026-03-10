@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TopFoodieCard } from "@/components/top-foodie-card";
 import { useAppState } from "@/lib/app-state";
+import { matchesHongKongLocation } from "@/lib/hk-locations";
 import { useI18n } from "@/lib/i18n";
 import { foodIntents, restaurants, user } from "@/lib/mock-data";
 import { parseSearchFiltersFromParams, toSearchParams, type SearchFilters } from "@/lib/search-filters";
@@ -216,7 +217,7 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
     const filteredByQuick = base.filter((review) => {
       const restaurant = restaurantById.get(review.restaurantId);
       if (!restaurant) return true;
-      if (urlFilters.area && urlFilters.area !== "附近" && restaurant.area !== urlFilters.area) return false;
+      if (urlFilters.area && urlFilters.area !== "附近" && !matchesHongKongLocation(restaurant.area, urlFilters.area)) return false;
       if (urlFilters.cuisine && !restaurant.tags.includes(urlFilters.cuisine)) return false;
       if (urlFilters.priceRange && restaurant.priceRange !== urlFilters.priceRange) return false;
       if (urlFilters.highRewardOnly && restaurant.rewardYieldPct < 5) return false;

@@ -1,179 +1,137 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { QrActionSheet } from "@/components/qr-action-sheet";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { LoaderCircle } from "lucide-react";
 import { SectionHeader } from "@/components/section-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppState } from "@/lib/app-state";
-import { bookings, orders, qrPayloadSamples, restaurants, type QrPayload } from "@/lib/mock-data";
+import { useI18n } from "@/lib/i18n";
+import { restaurants } from "@/lib/mock-data";
+import { getBookingDepositAmount } from "@/lib/payment";
+import { formatHKD } from "@/lib/utils";
 
 type PayClientProps = {
   context?: string;
   orderId?: string;
   bookingId?: string;
   intent?: string;
+  method?: string;
+  wallet?: string;
 };
 
-function safeParseQr(value: string): QrPayload | null {
-  try {
-    const data = JSON.parse(value) as QrPayload;
-    if (!data.type || !data.restaurantId || !data.merchantId || !data.nonce || !data.timestamp) return null;
-    return data;
-  } catch {
-    return null;
-  }
-}
+export function PayClient({ context, orderId, bookingId, method, wallet }: PayClientProps) {
+  const router = useRouter();
+  const { tx } = useI18n();
+  const { orders, bookings, wallet: walletState, processPayment } = useAppState();
+  const [message, setMessage] = useState("");
 
-export function PayClient({ context, orderId, bookingId, intent }: PayClientProps) {
-  const [activeTab, setActiveTab] = useState<"scan" | "myqr">("scan");
-  const [rawPayload, setRawPayload] = useState("");
-  const [selectedSample, setSelectedSample] = useState(qrPayloadSamples[0]?.payload || "");
-  const [parsedPayload, setParsedPayload] = useState<QrPayload | null>(null);
-  const [openSheet, setOpenSheet] = useState(false);
-  const [result, setResult] = useState("");
-  const [resultLink, setResultLink] = useState<string | null>(null);
+  const paymentMethod = method === "apple_pay" ? "apple_pay" : "credit_card";
+  const useWalletOffset = wallet === "1";
+  const methodLabel = paymentMethod === "apple_pay" ? tx("Apple Pay") : `${tx("Credit Card")} · Visa •••• 4356`;
 
-  const { confirmQrAction, orders: stateOrders, bookings: stateBookings } = useAppState();
-
-  const payloadFromContext = useMemo(() => {
-    if (!context) return "";
+  const paymentMeta = useMemo(() => {
+    if (context === "booking" && bookingId) {
+      const booking = bookings.find((item) => item.id === bookingId);
+      if (!booking) return null;
+      const restaurant = restaurants.find((item) => item.id === booking.restaurantId);
+      if (!restaurant) return null;
+      const total = getBookingDepositAmount(restaurant);
+      const walletOffset = useWalletOffset ? Math.min(walletState.viraBalance, total) : 0;
+      return {
+        title: restaurant.name,
+        subtitle: tx("正在確認你的訂座付款"),
+        total,
+        walletOffset,
+      };
+    }
 
     if (context === "order" && orderId) {
-      const order = stateOrders.find((item) => item.id === orderId) || orders.find((item) => item.id === orderId);
-      if (!order) return "";
-      return JSON.stringify({
-        type: intent === "verify" ? "VERIFY" : "PAY",
-        merchantId: `m-${order.restaurantId}`,
-        restaurantId: order.restaurantId,
-        orderId,
-        amount: intent === "verify" ? undefined : order.subtotal,
-        nonce: `nonce-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-      });
+      const order = orders.find((item) => item.id === orderId);
+      if (!order) return null;
+      const restaurant = restaurants.find((item) => item.id === order.restaurantId);
+      if (!restaurant) return null;
+      const total = order.subtotal;
+      const walletOffset = useWalletOffset ? Math.min(walletState.viraBalance, total) : 0;
+      return {
+        title: restaurant.name,
+        subtitle: tx("正在確認你的外賣付款"),
+        total,
+        walletOffset,
+      };
     }
 
-    if (context === "booking" && bookingId) {
-      const booking = stateBookings.find((item) => item.id === bookingId) || bookings.find((item) => item.id === bookingId);
-      if (!booking) return "";
-      const restaurant = restaurants.find((item) => item.id === booking.restaurantId);
-      const amount = Math.round((restaurant?.avgSpend || 120) * 0.3);
-      return JSON.stringify({
-        type: intent === "verify" ? "VERIFY" : "PAY",
-        merchantId: `m-${booking.restaurantId}`,
-        restaurantId: booking.restaurantId,
+    return null;
+  }, [bookingId, bookings, context, orderId, orders, tx, useWalletOffset, walletState.viraBalance]);
+
+  useEffect(() => {
+    if (!paymentMeta || !(context === "booking" || context === "order")) return;
+
+    const timer = window.setTimeout(() => {
+      const response = processPayment({
+        context,
         bookingId,
-        amount: intent === "verify" ? undefined : amount,
-        nonce: `nonce-${Date.now()}`,
-        timestamp: new Date().toISOString(),
+        orderId,
+        paymentMethod,
+        walletOffset: paymentMeta.walletOffset,
       });
-    }
+      if (!response.ok || !response.route) {
+        setMessage(response.message);
+        return;
+      }
+      router.replace(`${response.route}&method=${paymentMethod}&walletOffset=${paymentMeta.walletOffset}`);
+    }, 2000);
 
-    return "";
-  }, [context, orderId, bookingId, intent, stateOrders, stateBookings]);
+    return () => window.clearTimeout(timer);
+  }, [bookingId, context, orderId, paymentMeta, paymentMethod, processPayment, router]);
 
-  const currentPayload = parsedPayload || safeParseQr(rawPayload);
-  const restaurant = currentPayload ? restaurants.find((item) => item.id === currentPayload.restaurantId) : null;
-  const rewardEstimate =
-    currentPayload && restaurant ? (currentPayload.amount ? Math.round((currentPayload.amount * restaurant.rewardYieldPct) / 100) : 2) : 0;
+  if (!paymentMeta) {
+    return (
+      <div className="space-y-4">
+        <SectionHeader title="Payment" subtitle="" />
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <p className="text-sm text-muted-foreground">{message || tx("Checkout context missing.")}</p>
+            <Button asChild className="w-full rounded-lg">
+              <Link href="/orders">{tx("返 Orders")}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-2">
-      <SectionHeader title="Pay / Verify" subtitle="Unified QR flow for payment and verification" />
-
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "scan" | "myqr")}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="scan">Scan QR</TabsTrigger>
-          <TabsTrigger value="myqr">My QR</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="scan" className="mt-3 space-y-3">
-          <Card>
-            <CardContent className="space-y-3 p-4">
-              <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Camera placeholder</div>
-
-              <div className="space-y-2">
-                <Input value={rawPayload} onChange={(e) => setRawPayload(e.target.value)} placeholder='Paste QR payload: {"type":"PAY", ...}' aria-label="QR payload" />
-                <div className="flex gap-2">
-                  <select value={selectedSample} onChange={(e) => setSelectedSample(e.target.value)} className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm">
-                    {qrPayloadSamples.map((sample) => (
-                      <option key={sample.label} value={sample.payload}>{sample.label}</option>
-                    ))}
-                  </select>
-                  <Button type="button" variant="secondary" onClick={() => setRawPayload(selectedSample)}>Simulate Scan</Button>
-                </div>
-                {payloadFromContext ? (
-                  <Button type="button" variant="outline" className="w-full" onClick={() => setRawPayload(payloadFromContext)}>
-                    Use current context payload
-                  </Button>
-                ) : null}
-              </div>
-
-              <Button
-                className="w-full"
-                onClick={() => {
-                  const parsed = safeParseQr(rawPayload);
-                  if (!parsed) {
-                    setResult("Invalid QR payload.");
-                    return;
-                  }
-                  setParsedPayload(parsed);
-                  setOpenSheet(true);
-                }}
-              >
-                Parse & Continue
-              </Button>
-
-              {result ? <p className="text-sm text-muted-foreground">{result}</p> : null}
-
-              {currentPayload?.type === "PAY" && restaurant && !restaurant.livePosSync ? (
-                <Badge variant="outline">After payment, scan VERIFY QR for non-integrated POS</Badge>
-              ) : null}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="myqr" className="mt-3 space-y-3">
-          <Card>
-            <CardContent className="space-y-3 p-4">
-              <div className="relative mx-auto h-44 w-44 overflow-hidden rounded-lg border border-border/80">
-                <Image src="/images/qr-placeholder.png" alt="My QR" fill className="object-cover" />
-              </div>
-              <Input readOnly value='{"walletId":"opensesame-user-021","type":"PAY_OR_VERIFY","nonce":"myqr"}' aria-label="My QR payload" />
-              <Button type="button" variant="secondary" className="w-full">Copy</Button>
-              <p className="text-xs text-muted-foreground">Show this to merchant to pay with $OSM or verify visit.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      <QrActionSheet
-        open={openSheet}
-        onOpenChange={setOpenSheet}
-        payload={currentPayload}
-        rewardEstimate={rewardEstimate}
-        onConfirm={() => {
-          if (!currentPayload) return;
-          const response = confirmQrAction(currentPayload);
-          setResult(response.message);
-          if (response.ok) {
-            if (currentPayload.bookingId) setResultLink(`/orders/booking/${currentPayload.bookingId}`);
-            else if (currentPayload.orderId) setResultLink(`/orders/takeaway/${currentPayload.orderId}`);
-          }
-          setOpenSheet(false);
-        }}
-      />
-
-      {resultLink ? (
-        <Button asChild className="w-full rounded-lg">
-          <Link href={resultLink}>View details</Link>
-        </Button>
-      ) : null}
+      <SectionHeader title="Payment" subtitle="" />
+      <Card className="rounded-[28px] border-border/70 bg-card shadow-sm">
+        <CardContent className="space-y-5 p-6 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+            <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-lg font-semibold text-foreground">{paymentMeta.title}</p>
+            <p className="text-sm text-muted-foreground">{paymentMeta.subtitle}</p>
+          </div>
+          <div className="rounded-2xl border border-border/80 bg-secondary/40 p-4 text-left text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{tx("付款方式")}</span>
+              <span className="font-medium text-foreground">{methodLabel}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-muted-foreground">{tx("使用 $OSM")}</span>
+              <span className="font-medium text-foreground">{formatHKD(paymentMeta.walletOffset)}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-muted-foreground">{tx("尚需支付")}</span>
+              <span className="font-medium text-foreground">{formatHKD(Math.max(0, paymentMeta.total - paymentMeta.walletOffset))}</span>
+            </div>
+          </div>
+          {message ? <p className="text-sm text-destructive">{message}</p> : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }

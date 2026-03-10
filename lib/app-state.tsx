@@ -14,6 +14,7 @@ import {
   type TakeawayOrder,
   type WalletTx,
 } from "@/lib/mock-data";
+import { getBookingDepositAmount } from "@/lib/payment";
 import { generateId } from "@/lib/utils";
 
 type BookingDraft = {
@@ -121,6 +122,13 @@ type AppStateContextType = {
   }) => { ok: boolean; message: string };
   createBookingFromDraft: () => string | null;
   createOrderFromCart: (restaurantId: string) => string | null;
+  processPayment: (input: {
+    context: "booking" | "order";
+    bookingId?: string;
+    orderId?: string;
+    paymentMethod: "credit_card" | "apple_pay";
+    walletOffset: number;
+  }) => { ok: boolean; route?: string; message: string };
   confirmQrAction: (payload: QrPayload) => { ok: boolean; message: string; txId?: string };
   addTransferOut: (recipient: string, amount: number, note: string) => void;
   addBuy: (amount: number, note: string) => void;
@@ -531,6 +539,92 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setOrders((prev) => [order, ...prev]);
     clearCart(restaurantId);
     return id;
+  };
+
+  const processPayment = (input: {
+    context: "booking" | "order";
+    bookingId?: string;
+    orderId?: string;
+    paymentMethod: "credit_card" | "apple_pay";
+    walletOffset: number;
+  }) => {
+    const methodLabel = input.paymentMethod === "apple_pay" ? "Apple Pay" : "Credit card";
+
+    if (input.context === "booking") {
+      const booking = bookings.find((item) => item.id === input.bookingId);
+      if (!booking) return { ok: false, message: "Booking not found." };
+      if (booking.paymentStatus === "PAID_OSM") {
+        return { ok: true, route: `/pay/complete?context=booking&bookingId=${booking.id}`, message: "Payment already completed." };
+      }
+      const restaurant = restaurants.find((item) => item.id === booking.restaurantId);
+      if (!restaurant) return { ok: false, message: "Restaurant not found." };
+
+      const total = getBookingDepositAmount(restaurant);
+      const walletOffset = Math.max(0, Math.min(input.walletOffset, total, wallet.viraBalance));
+      if (walletOffset > wallet.viraBalance) return { ok: false, message: "Insufficient balance." };
+
+      if (walletOffset > 0) {
+        setWallet((prev) => ({ ...prev, viraBalance: prev.viraBalance - walletOffset }));
+        addTx({
+          id: generateId("tx"),
+          type: "PAY",
+          amountVira: -walletOffset,
+          counterparty: restaurant.name,
+          bookingId: booking.id,
+          restaurantId: restaurant.id,
+          createdAt: new Date().toISOString(),
+          status: "CONFIRMED",
+          note: `Booking deposit via $OSM + ${methodLabel}`,
+        });
+      }
+
+      setBookings((prev) =>
+        prev.map((item) =>
+          item.id === booking.id
+            ? { ...item, paymentStatus: "PAID_OSM", verificationStatus: "VERIFIED" }
+            : item
+        )
+      );
+
+      return { ok: true, route: `/pay/complete?context=booking&bookingId=${booking.id}`, message: "Payment completed." };
+    }
+
+    const order = orders.find((item) => item.id === input.orderId);
+    if (!order) return { ok: false, message: "Order not found." };
+    if (order.paymentStatus === "PAID_OSM") {
+      return { ok: true, route: `/pay/complete?context=order&orderId=${order.id}`, message: "Payment already completed." };
+    }
+    const restaurant = restaurants.find((item) => item.id === order.restaurantId);
+    if (!restaurant) return { ok: false, message: "Restaurant not found." };
+
+    const total = order.subtotal;
+    const walletOffset = Math.max(0, Math.min(input.walletOffset, total, wallet.viraBalance));
+    if (walletOffset > wallet.viraBalance) return { ok: false, message: "Insufficient balance." };
+
+    if (walletOffset > 0) {
+      setWallet((prev) => ({ ...prev, viraBalance: prev.viraBalance - walletOffset }));
+      addTx({
+        id: generateId("tx"),
+        type: "PAY",
+        amountVira: -walletOffset,
+        counterparty: restaurant.name,
+        orderId: order.id,
+        restaurantId: restaurant.id,
+        createdAt: new Date().toISOString(),
+        status: "CONFIRMED",
+        note: `Takeaway payment via $OSM + ${methodLabel}`,
+      });
+    }
+
+    setOrders((prev) =>
+      prev.map((item) =>
+        item.id === order.id
+          ? { ...item, paymentStatus: "PAID_OSM", verificationStatus: "VERIFIED" }
+          : item
+      )
+    );
+
+    return { ok: true, route: `/pay/complete?context=order&orderId=${order.id}`, message: "Payment completed." };
   };
 
   const cancelOrder = (orderId: string) => {
@@ -978,6 +1072,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       completeBooking,
       createBookingFromDraft,
       createOrderFromCart,
+      processPayment,
       confirmQrAction,
       addTransferOut,
       addBuy,

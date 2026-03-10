@@ -35,7 +35,7 @@ export function MembershipWalletSection({ className }: { className?: string }) {
       <Card id="membership-cards" className={cn("border-border/80", className)}>
         <CardContent className="space-y-3 p-4">
           <SectionHeader
-            title={tx("Membership Cards")}
+            title={tx("NFT Cards")}
             subtitle={tx("Select a card to view perks")}
             action={
               <Button
@@ -73,7 +73,7 @@ export function MembershipWalletSection({ className }: { className?: string }) {
                       <div className="flex items-center justify-between gap-2 p-2.5">
                         <div className="min-w-0">
                           <p className="truncate text-xs font-semibold text-foreground">{restaurantById.get(card.restaurantId)?.name || card.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{card.offers.length} {tx("offers")}</p>
+                          <p className="text-[11px] text-muted-foreground">{tx(card.tier)}</p>
                         </div>
                         {isActive ? (
                           <Badge variant="secondary" className="text-[10px]">
@@ -108,7 +108,7 @@ export function MembershipWalletSection({ className }: { className?: string }) {
                   <p className="text-xs text-muted-foreground">{tx("Offers & discounts")}</p>
                 </div>
                 <Button asChild size="sm" variant="secondary" className="h-8 rounded-full px-3 text-xs">
-                  <Link href={`/restaurant/${activeCard.restaurantId}`}>{tx("View")}</Link>
+                  <Link href={`/membership/${activeCard.id}`}>{tx("View")}</Link>
                 </Button>
               </div>
 
@@ -150,7 +150,7 @@ export function MembershipWalletSection({ className }: { className?: string }) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name || card.name}</p>
-                    <p className="text-xs text-muted-foreground">{restaurant?.area ? `${restaurant.area} · ${card.offers.length} ${tx("offers")}` : `${card.offers.length} ${tx("offers")}`}</p>
+                    <p className="text-xs text-muted-foreground">{restaurant?.area ? `${restaurant.area} · ${tx(card.tier)}` : tx(card.tier)}</p>
                   </div>
                   <Button
                     type="button"

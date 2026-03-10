@@ -3,12 +3,15 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SectionHeader } from "@/components/section-header";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAppState } from "@/lib/app-state";
 import { useI18n } from "@/lib/i18n";
 import { restaurants } from "@/lib/mock-data";
+import { getBookingDepositAmount } from "@/lib/payment";
 import { cn, formatDateTime, formatHKD } from "@/lib/utils";
 
 type CheckoutClientProps = {
@@ -20,23 +23,12 @@ export function CheckoutClient({ type: rawType, restaurantId = "" }: CheckoutCli
   const { tx } = useI18n();
   const router = useRouter();
   const type = rawType === "booking" ? "booking" : "takeaway";
-  const { bookingDraft, cartDraft, setCartItem, createBookingFromDraft, createOrderFromCart } = useAppState();
-  const [depositRequired, setDepositRequired] = useState(false);
+  const { bookingDraft, cartDraft, createBookingFromDraft, createOrderFromCart, wallet } = useAppState();
+  const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "apple_pay">("credit_card");
+  const [useWalletOffset, setUseWalletOffset] = useState(true);
 
   const restaurant = restaurants.find((item) => item.id === restaurantId);
   const cart = cartDraft[restaurantId] || {};
-  const cartMenuIds = useMemo(() => new Set(Object.keys(cart)), [cart]);
-
-  const addOnSuggestions = useMemo(() => {
-    if (!restaurant) return [];
-    const candidates = restaurant.takeawayMenu.filter((item) => item.available && !cartMenuIds.has(item.id));
-    const score = (item: (typeof restaurant.takeawayMenu)[number]) => {
-      const tags = new Set(item.tags);
-      return (tags.has("Top") ? 10 : 0) + (tags.has("Snack") ? 2 : 0) + (tags.has("Mixed") ? 1 : 0);
-    };
-    return [...candidates].sort((a, b) => score(b) - score(a)).slice(0, 3);
-  }, [cartMenuIds, restaurant]);
-
   const nearbyRestaurants = useMemo(() => {
     if (!restaurant) return [];
     const candidates = restaurants
@@ -62,10 +54,12 @@ export function CheckoutClient({ type: rawType, restaurantId = "" }: CheckoutCli
 
   if (!restaurant) return <p className="text-sm text-muted-foreground">{tx("Checkout context missing.")}</p>;
 
-  const rewardEstimate =
-    type === "booking"
-      ? Math.round((restaurant.avgSpend * restaurant.rewardYieldPct) / 100)
-      : Math.round((subtotal * restaurant.rewardYieldPct) / 100);
+  const depositAmount = getBookingDepositAmount(restaurant);
+  const payableAmount = type === "booking" ? depositAmount : subtotal;
+  const walletOffset = useWalletOffset ? Math.min(wallet.viraBalance, payableAmount) : 0;
+  const remainingAmount = Math.max(0, payableAmount - walletOffset);
+  const spendReward = Math.round((subtotal * restaurant.rewardYieldPct) / 100);
+  const creditCardLabel = "Visa •••• 4356";
 
   return (
     <div className={cn("space-y-4", type === "takeaway" ? "theme-takeaway" : "")}>
@@ -77,20 +71,55 @@ export function CheckoutClient({ type: rawType, restaurantId = "" }: CheckoutCli
             <p className="text-sm font-semibold text-foreground">{restaurant.name}</p>
             <p className="text-sm text-muted-foreground">{tx("Time")}: {bookingDraft ? formatDateTime(bookingDraft.datetime) : tx("Not set")}</p>
             <p className="text-sm text-muted-foreground">{tx("Party size")}: {bookingDraft?.partySize ?? 0}</p>
-            <div className="flex items-center justify-between rounded-lg border border-border/80 p-3">
-              <p className="text-sm text-foreground">{tx("Deposit required?")}</p>
-              <Switch checked={depositRequired} onCheckedChange={setDepositRequired} />
+            <div className="rounded-lg border border-border/80 p-3">
+              <p className="text-sm font-medium text-foreground">{depositAmount > 0 ? tx("需要訂金") : tx("毋須訂金")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {depositAmount > 0 ? `${tx("訂金")}: ${formatHKD(depositAmount)}` : tx("此訂座無需預先支付訂金。")}
+              </p>
             </div>
-            <p className="text-sm text-foreground">{tx("Reward estimate")}: {rewardEstimate} $OSM</p>
+            <div className="space-y-3 rounded-lg border border-border/80 p-3">
+              <p className="text-sm font-medium text-foreground">{tx("付款方式")}</p>
+              <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as "credit_card" | "apple_pay")} className="space-y-2">
+                <Label className="flex items-center gap-3 rounded-lg border border-border/80 px-3 py-3">
+                  <RadioGroupItem value="credit_card" />
+                  <span className="text-sm text-foreground">{tx("Credit Card")} · {creditCardLabel}</span>
+                </Label>
+                <Label className="flex items-center gap-3 rounded-lg border border-border/80 px-3 py-3">
+                  <RadioGroupItem value="apple_pay" />
+                  <span className="text-sm text-foreground">{tx("Apple Pay")}</span>
+                </Label>
+              </RadioGroup>
+              <div className="flex items-center justify-between rounded-lg bg-secondary/50 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{tx("使用 $OSM 抵扣")}</p>
+                  <p className="text-xs text-muted-foreground">{tx("最多可抵扣")} {formatHKD(walletOffset)}</p>
+                </div>
+                <Switch checked={useWalletOffset} onCheckedChange={setUseWalletOffset} />
+              </div>
+              <div className="space-y-1 text-sm">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span>{tx("訂金")}</span>
+                  <span>{formatHKD(depositAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span>{tx("使用 $OSM")}</span>
+                  <span>- {formatHKD(walletOffset)}</span>
+                </div>
+                <div className="flex items-center justify-between font-medium text-foreground">
+                  <span>{tx("尚需支付")}</span>
+                  <span>{formatHKD(remainingAmount)}</span>
+                </div>
+              </div>
+            </div>
             <Button
               className="w-full rounded-lg"
               onClick={() => {
                 const bookingId = createBookingFromDraft();
                 if (!bookingId) return;
-                router.push(`/pay?context=booking&bookingId=${bookingId}`);
+                router.push(`/pay?context=booking&bookingId=${bookingId}&method=${paymentMethod}&wallet=${useWalletOffset ? "1" : "0"}`);
               }}
             >
-              {tx("Proceed to Pay/Verify")}
+              {depositAmount > 0 ? tx("去付款") : tx("確認訂座")}
             </Button>
           </CardContent>
         </Card>
@@ -110,33 +139,51 @@ export function CheckoutClient({ type: rawType, restaurantId = "" }: CheckoutCli
                 );
               })}
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-lg"
+              onClick={() => router.push(`/restaurant/${restaurant.id}?mode=takeaway`)}
+            >
+              {tx("View more food")}
+            </Button>
             <p className="text-sm text-foreground">{tx("Subtotal")}: {formatHKD(subtotal)}</p>
-            <p className="text-sm text-foreground">{tx("Reward estimate")}: {rewardEstimate} $OSM</p>
+            <p className="text-sm text-foreground">{tx("消費回贈")}: {spendReward} $OSM</p>
 
-            {addOnSuggestions.length > 0 ? (
-              <div className="space-y-2 rounded-lg border border-border/80 p-3">
-                <p className="text-sm font-semibold text-foreground">{tx("多人分享建議")}</p>
-                <p className="text-xs text-muted-foreground">{tx("幫家人／朋友加多兩三樣，同一間店一齊拎。")}</p>
-                <div className="space-y-2">
-                  {addOnSuggestions.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
-                      <div className="min-w-0">
-                        <p className="truncate text-foreground">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatHKD(item.price)}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="h-8 rounded-lg"
-                        onClick={() => setCartItem(restaurant.id, item.id, 1)}
-                      >
-                        {tx("Add")}
-                      </Button>
-                    </div>
-                  ))}
+            <div className="space-y-3 rounded-lg border border-border/80 p-3">
+              <p className="text-sm font-medium text-foreground">{tx("付款方式")}</p>
+              <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as "credit_card" | "apple_pay")} className="space-y-2">
+                <Label className="flex items-center gap-3 rounded-lg border border-border/80 px-3 py-3">
+                  <RadioGroupItem value="credit_card" />
+                  <span className="text-sm text-foreground">{tx("Credit Card")} · {creditCardLabel}</span>
+                </Label>
+                <Label className="flex items-center gap-3 rounded-lg border border-border/80 px-3 py-3">
+                  <RadioGroupItem value="apple_pay" />
+                  <span className="text-sm text-foreground">{tx("Apple Pay")}</span>
+                </Label>
+              </RadioGroup>
+              <div className="flex items-center justify-between rounded-lg bg-secondary/50 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{tx("使用 $OSM 抵扣")}</p>
+                  <p className="text-xs text-muted-foreground">{tx("最多可抵扣")} {formatHKD(walletOffset)}</p>
+                </div>
+                <Switch checked={useWalletOffset} onCheckedChange={setUseWalletOffset} />
+              </div>
+              <div className="space-y-1 text-sm">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span>{tx("Subtotal")}</span>
+                  <span>{formatHKD(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span>{tx("使用 $OSM")}</span>
+                  <span>- {formatHKD(walletOffset)}</span>
+                </div>
+                <div className="flex items-center justify-between font-medium text-foreground">
+                  <span>{tx("尚需支付")}</span>
+                  <span>{formatHKD(remainingAmount)}</span>
                 </div>
               </div>
-            ) : null}
+            </div>
 
             {nearbyRestaurants.length > 0 ? (
               <div className="space-y-2 rounded-lg border border-border/80 p-3">
@@ -166,10 +213,10 @@ export function CheckoutClient({ type: rawType, restaurantId = "" }: CheckoutCli
               onClick={() => {
                 const orderId = createOrderFromCart(restaurant.id);
                 if (!orderId) return;
-                router.push(`/pay?context=order&orderId=${orderId}`);
+                router.push(`/pay?context=order&orderId=${orderId}&method=${paymentMethod}&wallet=${useWalletOffset ? "1" : "0"}`);
               }}
             >
-              {tx("Proceed to Pay/Verify")}
+              {tx("去付款")}
             </Button>
           </CardContent>
         </Card>

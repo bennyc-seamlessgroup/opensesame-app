@@ -82,17 +82,11 @@ export default function WalletPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-border/70 bg-card p-3">
                 <p className="text-[11px] text-muted-foreground">Available</p>
-                <p className="mt-1 flex items-baseline gap-1">
-                  <span className="text-lg font-semibold tabular-nums">{formatWalletAmount(wallet.viraBalance)}</span>
-                  <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
-                </p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">{formatWalletAmount(wallet.viraBalance)}</p>
               </div>
               <div className="rounded-2xl border border-border/70 bg-card p-3">
                 <p className="text-[11px] text-muted-foreground">Staked</p>
-                <p className="mt-1 flex items-baseline gap-1">
-                  <span className="text-lg font-semibold tabular-nums">{formatWalletAmount(wallet.stakedBalance)}</span>
-                  <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
-                </p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">{formatWalletAmount(wallet.stakedBalance)}</p>
               </div>
               <div className="rounded-2xl border border-border/70 bg-card p-3">
                 <p className="text-[11px] text-muted-foreground">APY</p>
@@ -132,18 +126,16 @@ export default function WalletPage() {
             </div>
             <div className="rounded-2xl bg-secondary/70 p-4 text-center">
               <p className="text-xs text-muted-foreground">Projected yearly</p>
-              <p className="mt-2 inline-flex items-baseline justify-center gap-1 text-2xl font-semibold text-foreground">
+              <p className="mt-2 inline-flex items-baseline justify-center gap-1 text-center text-2xl font-semibold text-foreground">
                 <Coins className="h-5 w-5 text-amber-500" />
                 <span className="tabular-nums">{formatWalletAmount(Number((wallet.stakedBalance * wallet.apyPct / 100).toFixed(1)))}</span>
-                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
               </p>
             </div>
             <div className="rounded-2xl bg-secondary/70 p-4 text-center">
               <p className="text-xs text-muted-foreground">Today earned</p>
-              <p className="mt-2 inline-flex items-baseline justify-center gap-1 text-2xl font-semibold text-foreground">
+              <p className="mt-2 inline-flex items-baseline justify-center gap-1 text-center text-2xl font-semibold text-foreground">
                 <Sparkles className="h-5 w-5 text-amber-500" />
                 <span className="tabular-nums">{formatWalletAmount(wallet.todayEarnings)}</span>
-                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
               </p>
             </div>
           </div>
@@ -162,7 +154,7 @@ export default function WalletPage() {
           {stakingTab === "stake" ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Available: {formatWalletAmount(wallet.viraBalance)} $OSM</span>
+                <span>Available: {formatWalletAmount(wallet.viraBalance)}</span>
                 <div className="flex gap-1">
                   {[0.25, 0.5, 1].map((pct) => (
                     <button
@@ -187,7 +179,7 @@ export default function WalletPage() {
           ) : (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Staked: {formatWalletAmount(wallet.stakedBalance)} $OSM</span>
+                <span>Staked: {formatWalletAmount(wallet.stakedBalance)}</span>
                 <div className="flex gap-1">
                   {[0.25, 0.5, 1].map((pct) => (
                     <button
@@ -243,7 +235,7 @@ export default function WalletPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Transfer</DialogTitle></DialogHeader>
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Available: {formatWalletAmount(wallet.viraBalance)} $OSM</p>
+            <p className="text-xs text-muted-foreground">Available: {formatWalletAmount(wallet.viraBalance)}</p>
             <Input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Recipient" />
             <Input value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} placeholder="Amount ($OSM)" />
             <Input value={transferNote} onChange={(e) => setTransferNote(e.target.value)} placeholder="Note" />
@@ -270,7 +262,6 @@ export default function WalletPage() {
             {[50, 100, 200].map((amount) => (
               <Button key={amount} variant={buyAmount === amount ? "default" : "secondary"} onClick={() => setBuyAmount(amount)} className="h-10 rounded-xl">
                 <span className="tabular-nums">{amount}</span>
-                <span className="text-[10px] font-medium uppercase tracking-wide opacity-80">$OSM</span>
               </Button>
             ))}
           </div>
@@ -278,7 +269,6 @@ export default function WalletPage() {
             <p className="text-sm font-medium text-foreground">You will receive</p>
             <p className="mt-1 flex items-baseline gap-1 text-lg font-semibold text-foreground">
               <span className="tabular-nums">{formatWalletAmount(buyAmount)}</span>
-              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Payment method: Card (placeholder)</p>
           </div>

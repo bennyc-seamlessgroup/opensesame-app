@@ -28,13 +28,18 @@ export default function RestaurantDetailPage() {
   const { reviews, cartDraft, setCartItem, setBookingDraft } = useAppState();
 
   const restaurant = restaurants.find((item) => item.id === params.id);
-  const mode = search.get("mode") === "takeaway" ? "takeaway" : "book";
+  const requestedMode = search.get("mode") === "takeaway" ? "takeaway" : "book";
 
   const [datetime, setDatetime] = useState("2026-02-28T19:00");
   const [partySize, setPartySize] = useState(2);
   const [bookingNotes, setBookingNotes] = useState("");
 
   if (!restaurant) return <p className="text-sm text-muted-foreground">{tx("找不到餐廳。")}</p>;
+
+  const mode =
+    requestedMode === "takeaway"
+      ? (restaurant.supportsTakeaway ? "takeaway" : "book")
+      : (restaurant.supportsBooking ? "book" : "takeaway");
 
   const restaurantReviews = reviews.filter((review) => review.restaurantId === restaurant.id);
   const mostTrusted = [...restaurantReviews].sort((a, b) => {
@@ -77,15 +82,31 @@ export default function RestaurantDetailPage() {
 
         <div className="grid grid-cols-2 gap-2">
           {restaurant.supportsBooking ? (
-            <Button asChild className="rounded-lg">
+            <Button
+              asChild
+              variant={mode === "book" ? "default" : "secondary"}
+              className="rounded-lg"
+            >
               <Link href={`/restaurant/${restaurant.id}?mode=book`}>{tx("Book枱")}</Link>
             </Button>
-          ) : null}
+          ) : (
+            <Button disabled variant="secondary" className="rounded-lg opacity-50">
+              {tx("Book枱")}
+            </Button>
+          )}
           {restaurant.supportsTakeaway ? (
-            <Button asChild variant="secondary" className="rounded-lg">
+            <Button
+              asChild
+              variant={mode === "takeaway" ? "default" : "secondary"}
+              className="rounded-lg"
+            >
               <Link href={`/restaurant/${restaurant.id}?mode=takeaway`}>{tx("外賣")}</Link>
             </Button>
-          ) : null}
+          ) : (
+            <Button disabled variant="secondary" className="rounded-lg opacity-50">
+              {tx("外賣")}
+            </Button>
+          )}
         </div>
       </section>
 
@@ -146,9 +167,9 @@ export default function RestaurantDetailPage() {
               <Button
                 className="rounded-lg"
                 disabled={subtotal <= 0}
-                onClick={() => router.push("/cart")}
+                onClick={() => router.push(`/checkout?type=takeaway&restaurantId=${restaurant.id}`)}
               >
-                {tx("去購物車")}
+                {tx("去結帳")}
               </Button>
             </div>
           </div>

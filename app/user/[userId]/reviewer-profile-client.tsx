@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Search, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, Medal, Search, ShieldCheck, UserPlus } from "lucide-react";
 import { ReviewPostCard } from "@/components/review-post-card";
 import { SectionHeader } from "@/components/section-header";
 import { Badge } from "@/components/ui/badge";
@@ -133,12 +133,24 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
   const visitorsCount = useMemo(() => stableInt(`${userId}:visitors`, 20, 120), [userId]);
 
   const membershipShowcase = useMemo<MembershipCard[]>(() => {
-    const sourceIds = isSelf ? membership.ownedCardIds : Array.from(new Set(effectiveReviews.map((r) => r.restaurantId)));
+    const sourceIds = isSelf
+      ? membership.ownedCardIds
+      : membershipCards
+          .map((card, index) => ({ card, score: stableInt(`${userId}:${card.id}`, 0, 99) + (effectiveReviews.some((r) => r.restaurantId === card.restaurantId) ? 100 : 0) + index }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5)
+          .map(({ card }) => card.id);
     return sourceIds
       .map((id) => membershipByRestaurantId.get(id))
       .filter((item): item is MembershipCard => Boolean(item))
       .slice(0, 12);
   }, [effectiveReviews, isSelf, membership.ownedCardIds, membershipByRestaurantId]);
+
+  const nftTierSummary = useMemo(() => {
+    const counts = { Bronze: 0, Silver: 0, Gold: 0 };
+    for (const card of membershipShowcase) counts[card.tier] += 1;
+    return counts;
+  }, [membershipShowcase]);
 
   const headerImage = useMemo(() => {
     const firstRestaurantId = effectiveReviews[0]?.restaurantId;
@@ -219,6 +231,20 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
                 <Badge key={tag} variant="outline" className="text-[11px]">{tag}</Badge>
               ))}
             </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-foreground/80">
+              <span className="inline-flex items-center gap-1" aria-label={`Bronze ${nftTierSummary.Bronze}`}>
+                <span>{nftTierSummary.Bronze}</span>
+                <Medal className="h-4 w-4 text-amber-600" />
+              </span>
+              <span className="inline-flex items-center gap-1" aria-label={`Silver ${nftTierSummary.Silver}`}>
+                <span>{nftTierSummary.Silver}</span>
+                <Medal className="h-4 w-4 text-slate-300" />
+              </span>
+              <span className="inline-flex items-center gap-1" aria-label={`Gold ${nftTierSummary.Gold}`}>
+                <span>{nftTierSummary.Gold}</span>
+                <Medal className="h-4 w-4 text-yellow-400" />
+              </span>
+            </div>
             <div className="grid grid-cols-3 gap-2 rounded-xl border border-border/80 bg-background/60 p-2.5">
               <div className="text-center">
                 <p className="text-lg font-semibold text-foreground">{profile.followingCount}</p>
@@ -244,7 +270,7 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
               <Link href={`/user/${userId}`}>{tx("Reviews")}</Link>
             </TabsTrigger>
             <TabsTrigger className="flex-1" value="badges" asChild>
-              <Link href={`/user/${userId}?tab=badges`}>{tx("Membership Cards")}</Link>
+              <Link href={`/user/${userId}?tab=badges`}>{tx("NFT Cards")}</Link>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -253,7 +279,7 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
       {activeTab === "badges" ? (
         <section className="space-y-2">
           <SectionHeader
-            title={tx("Membership Cards")}
+            title={tx("NFT Cards")}
             subtitle={tx("Showcase restaurant perks")}
             action={
               isSelf ? (
@@ -271,7 +297,7 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
                 return (
                   <Link
                     key={card.id}
-                    href={`/restaurant/${card.restaurantId}`}
+                    href={`/membership/${card.id}`}
                     className="group overflow-hidden rounded-2xl border border-border/80 bg-card"
                   >
                     <div className="relative aspect-[16/10] w-full bg-muted p-2">
@@ -279,9 +305,7 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
                       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
                       <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
                         <p className="truncate text-xs font-semibold text-white">{restaurant?.name || card.name}</p>
-                        <Badge variant="secondary" className="shrink-0 text-[10px]">
-                          {card.offers.length} {tx("offers")}
-                        </Badge>
+                        <Badge variant="secondary" className="shrink-0 text-[10px]">{tx(card.tier)}</Badge>
                       </div>
                     </div>
                   </Link>

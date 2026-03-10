@@ -130,6 +130,11 @@ export type MembershipCard = {
   image: string;
   tier: "Bronze" | "Silver" | "Gold";
   theme: "orange" | "sky" | "emerald" | "violet";
+  acquisition: {
+    type: "FREE" | "PAID" | "APPROVAL";
+    price?: number;
+    note: string;
+  };
   offers: MembershipCardOffer[];
 };
 
@@ -344,6 +349,7 @@ export const restaurants: Restaurant[] = [
       { name: "Avocado Toast", image: "/images/food/avocado_toast.jpg", tags: ["Healthy"] },
     ],
     takeawayMenu: [
+      { id: "umi-0", name: "All Day Breakfast", image: "/images/food/breakfast.jpg", price: 128, tags: ["Brunch"], available: true },
       { id: "umi-1", name: "Breakfast Set", image: "/images/food/breakfast.jpg", price: 128, tags: ["Brunch"], available: true },
       { id: "umi-2", name: "Latte", image: "/images/food/avocado_toast.jpg", price: 38, tags: ["Coffee"], available: true },
     ],
@@ -395,6 +401,7 @@ export const restaurants: Restaurant[] = [
       { name: "Thai Crab Omelette", image: "/images/food/crab_omelette.jpg", tags: ["Signature"] },
     ],
     takeawayMenu: [
+      { id: "milu-0", name: "Tom Yum Soup", image: "/images/food/tomyum.jpg", price: 108, tags: ["Soup", "Spicy"], available: true },
       { id: "milu-1", name: "Pad Thai", image: "/images/food/tomyum_noodle.jpg", price: 98, tags: ["Noodles"], available: true },
       { id: "milu-2", name: "Green Curry", image: "/images/food/tomyum.jpg", price: 108, tags: ["Spicy"], available: true },
     ],
@@ -463,6 +470,11 @@ export const membershipCards: MembershipCard[] = [
     image: "/images/membership/mano_membership.png",
     tier: "Gold",
     theme: "violet",
+    acquisition: {
+      type: "PAID",
+      price: 388,
+      note: "Available for direct purchase in app.",
+    },
     offers: [
       { id: "mano-1", title: "10% off handmade pasta", subtitle: "Mon–Thu dinner", discountLabel: "10% OFF", terms: "Dine-in only. Excludes set menus." },
       { id: "mano-2", title: "Birthday dessert on the house", subtitle: "Birthday month", discountLabel: "FREE", terms: "One per member. Show ID at checkout." },
@@ -475,6 +487,10 @@ export const membershipCards: MembershipCard[] = [
     image: "/images/membership/umi_membership.png",
     tier: "Bronze",
     theme: "sky",
+    acquisition: {
+      type: "FREE",
+      note: "Free to claim for all users this month.",
+    },
     offers: [
       { id: "umi-1", title: "Free upgrade to oat milk", subtitle: "Any latte", discountLabel: "FREE", terms: "One upgrade per order." },
       { id: "umi-2", title: "Brunch set discount", subtitle: "Weekends 11:00–14:00", discountLabel: "HK$20 OFF", terms: "Minimum spend HK$120." },
@@ -487,6 +503,10 @@ export const membershipCards: MembershipCard[] = [
     image: "/images/membership/casamigos_membership.png",
     tier: "Silver",
     theme: "orange",
+    acquisition: {
+      type: "APPROVAL",
+      note: "Requires restaurant approval after application.",
+    },
     offers: [
       { id: "casa-1", title: "Tapas bundle deal", subtitle: "Choose 3 tapas", discountLabel: "HK$60 OFF", terms: "Dine-in only. Limited to selected tapas." },
       { id: "casa-2", title: "Wine-by-the-glass promo", subtitle: "Sun–Thu", discountLabel: "2nd 50%", terms: "Same wine only." },
@@ -499,6 +519,11 @@ export const membershipCards: MembershipCard[] = [
     image: "/images/membership/miluThai_membership.png",
     tier: "Silver",
     theme: "emerald",
+    acquisition: {
+      type: "PAID",
+      price: 188,
+      note: "Purchase once to unlock takeaway and dine-in perks.",
+    },
     offers: [
       { id: "milu-1", title: "Green curry discount", subtitle: "Takeaway & dine-in", discountLabel: "HK$15 OFF", terms: "One per order." },
       { id: "milu-2", title: "Free iced Thai tea", subtitle: "With any main", discountLabel: "FREE", terms: "While stocks last." },
@@ -511,6 +536,10 @@ export const membershipCards: MembershipCard[] = [
     image: "/images/membership/atas_membership.png",
     tier: "Bronze",
     theme: "sky",
+    acquisition: {
+      type: "FREE",
+      note: "Claimable after your first completed order.",
+    },
     offers: [
       { id: "atas-1", title: "Laksa add-on topping", subtitle: "Choose one", discountLabel: "FREE", terms: "Egg / tofu / fish cake. One per bowl." },
       { id: "atas-2", title: "Lunch set discount", subtitle: "Weekdays 12:00–15:00", discountLabel: "HK$10 OFF", terms: "Minimum spend HK$80." },
@@ -523,6 +552,10 @@ export const membershipCards: MembershipCard[] = [
     image: "/images/membership/thaiSimple_membership.png",
     tier: "Gold",
     theme: "orange",
+    acquisition: {
+      type: "APPROVAL",
+      note: "Distributed by the restaurant to selected members.",
+    },
     offers: [
       { id: "tsk-1", title: "Basil pork rice promo", subtitle: "Weekday takeaway", discountLabel: "HK$8 OFF", terms: "One per order." },
       { id: "tsk-2", title: "Free extra fried egg", subtitle: "With any rice bowl", discountLabel: "FREE", terms: "Dine-in only." },
@@ -719,7 +752,7 @@ export const reviews: Review[] = [
     aiCitations: 11,
     tags: ["brunch", "coffee", "quick"],
     userName: "AdaLovesFood",
-    userAvatar: "/images/avatar-2.jpg",
+    userAvatar: "/images/food/breakfast.jpg",
   },
   {
     id: "rv-3",
@@ -741,7 +774,7 @@ export const reviews: Review[] = [
     aiCitations: 9,
     tags: ["spicy", "seafood", "quick"],
     userName: "NoodleScout",
-    userAvatar: "/images/avatar-3.jpg",
+    userAvatar: "/images/food/laksa.jpg",
   },
   {
     id: "rv-7",
@@ -763,7 +796,7 @@ export const reviews: Review[] = [
     aiCitations: 6,
     tags: ["comfort", "takeaway", "quick"],
     userName: "AfterWorkEats",
-    userAvatar: "/images/avatar-2.jpg",
+    userAvatar: "/images/food/tomyum.jpg",
   },
   {
     id: "rv-4",
@@ -785,7 +818,7 @@ export const reviews: Review[] = [
     aiCitations: 14,
     tags: ["date night", "signature dish", "italian"],
     userName: "HKFoodMap",
-    userAvatar: "/images/avatar-3.jpg",
+    userAvatar: "/images/food/paella.jpg",
   },
   {
     id: "rv-8",
@@ -807,7 +840,7 @@ export const reviews: Review[] = [
     aiCitations: 10,
     tags: ["group", "booking", "reliable"],
     userName: "DinnerPlanner",
-    userAvatar: "/images/avatar-2.jpg",
+    userAvatar: "/images/food/truffle_pasta.jpg",
   },
   {
     id: "rv-5",
@@ -829,7 +862,7 @@ export const reviews: Review[] = [
     aiCitations: 16,
     tags: ["date night", "premium", "italian"],
     userName: "OmakaseWeekly",
-    userAvatar: "/images/avatar-2.jpg",
+    userAvatar: "/images/food/burrata.jpg",
   },
   {
     id: "rv-9",
@@ -851,7 +884,7 @@ export const reviews: Review[] = [
     aiCitations: 12,
     tags: ["wine", "service", "celebration"],
     userName: "SushiNotes",
-    userAvatar: "/images/avatar-3.jpg",
+    userAvatar: "/images/food/garlic_prawn.jpg",
   },
   {
     id: "rv-6",
@@ -873,7 +906,7 @@ export const reviews: Review[] = [
     aiCitations: 7,
     tags: ["value", "takeaway", "singaporean"],
     userName: "DessertRadar",
-    userAvatar: "/images/avatar-2.jpg",
+    userAvatar: "/images/food/avocado_toast.jpg",
   },
   {
     id: "rv-10",
@@ -895,7 +928,7 @@ export const reviews: Review[] = [
     aiCitations: 5,
     tags: ["thai", "queue", "quick"],
     userName: "SnackSeeker",
-    userAvatar: "/images/avatar-3.jpg",
+    userAvatar: "/images/food/chicken_rice.jpg",
   },
   {
     id: "rv-11",
@@ -917,7 +950,7 @@ export const reviews: Review[] = [
     aiCitations: 8,
     tags: ["brunch", "coffee", "casual"],
     userName: "BrunchHunter",
-    userAvatar: "/images/avatar-1.jpg",
+    userAvatar: "/images/food/crab_omelette.jpg",
   },
   {
     id: "rv-12",
@@ -939,7 +972,7 @@ export const reviews: Review[] = [
     aiCitations: 12,
     tags: ["italian", "date night", "signature"],
     userName: "PastaClub",
-    userAvatar: "/images/avatar-2.jpg",
+    userAvatar: "/images/food/tomyum_noodle.jpg",
   },
   {
     id: "rv-13",
@@ -961,7 +994,7 @@ export const reviews: Review[] = [
     aiCitations: 5,
     tags: ["singaporean", "lunch", "value"],
     userName: "LaksaDiary",
-    userAvatar: "/images/avatar-3.jpg",
+    userAvatar: "/images/food/basil_pork.jpg",
   },
   {
     id: "rv-14",
@@ -983,7 +1016,7 @@ export const reviews: Review[] = [
     aiCitations: 9,
     tags: ["thai", "spicy", "takeaway"],
     userName: "SpiceMeter",
-    userAvatar: "/images/avatar-1.jpg",
+    userAvatar: "/images/food/avocado_toast.jpg",
   },
   {
     id: "rv-15",
@@ -1005,7 +1038,7 @@ export const reviews: Review[] = [
     aiCitations: 8,
     tags: ["tapas", "wine", "group"],
     userName: "TapasNotes",
-    userAvatar: "/images/avatar-2.jpg",
+    userAvatar: "/images/food/burrata.jpg",
   },
   {
     id: "rv-16",
@@ -1027,7 +1060,7 @@ export const reviews: Review[] = [
     aiCitations: 4,
     tags: ["thai", "quick", "office lunch"],
     userName: "CWBLunchMap",
-    userAvatar: "/images/avatar-3.jpg",
+    userAvatar: "/images/food/garlic_prawn.jpg",
   },
   {
     id: "rv-17",
@@ -1049,7 +1082,7 @@ export const reviews: Review[] = [
     aiCitations: 3,
     tags: ["brunch", "takeaway", "coffee"],
     userName: "WeekendBites",
-    userAvatar: "/images/avatar-1.jpg",
+    userAvatar: "/images/food/laksa.jpg",
   },
   {
     id: "rv-18",
@@ -1071,7 +1104,7 @@ export const reviews: Review[] = [
     aiCitations: 6,
     tags: ["chicken rice", "value", "quick"],
     userName: "CurryAndRice",
-    userAvatar: "/images/avatar-2.jpg",
+    userAvatar: "/images/food/breakfast.jpg",
   },
 ];
 

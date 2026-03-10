@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,7 +26,7 @@ export function ReviewCard({ review, headerAction, footer, className }: ReviewCa
     <Card className={cn("border-border/80", className)}>
       <CardContent className="space-y-3 p-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <Link href={`/user/${review.userId}`} className="flex items-center gap-2">
             {review.userAvatar ? (
               <Image src={review.userAvatar} alt={review.userName} width={28} height={28} className="rounded-full" />
             ) : null}
@@ -33,7 +34,7 @@ export function ReviewCard({ review, headerAction, footer, className }: ReviewCa
               <p className="text-sm font-medium text-foreground">{review.userName}</p>
               <p className="text-xs text-muted-foreground">{formatDateTime(review.createdAt)}</p>
             </div>
-          </div>
+          </Link>
           <div className="flex items-center gap-1.5">
             <Badge variant="secondary" className="text-[11px]">{tx("信譽")} {review.userReputationScore}</Badge>
             {headerAction}

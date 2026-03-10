@@ -1,7 +1,7 @@
 import { type WalletTx } from "@/lib/mock-data";
 import { ArrowDownLeft, ArrowUpRight, CreditCard, Gift, Lock, Scan, ThumbsUp, Undo2 } from "lucide-react";
 import type { ComponentType } from "react";
-import { formatDateTime, formatVira } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 
 type WalletTxListProps = {
   items: WalletTx[];
@@ -42,15 +42,15 @@ export function WalletTxList({ items }: WalletTxListProps) {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">{txMeta[tx.type]?.label ?? tx.type.replaceAll("_", " ")}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {formatDateTime(tx.createdAt)} • {tx.status}
-                </p>
+                <p className="truncate text-xs text-muted-foreground">{formatDateTime(tx.createdAt)}</p>
               </div>
             </div>
-            <p className={`text-sm font-semibold ${tx.amountVira >= 0 ? "text-primary" : "text-foreground"}`}>
-              {tx.amountVira >= 0 ? "+" : ""}
-              {formatVira(tx.amountVira)}
-            </p>
+            <div className={`min-w-[92px] text-right ${tx.amountVira >= 0 ? "text-primary" : "text-foreground"}`}>
+              <p className="inline-flex items-baseline justify-end gap-1 whitespace-nowrap text-sm font-semibold tabular-nums">
+                <span>{tx.amountVira >= 0 ? "+" : ""}{tx.amountVira.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
+              </p>
+            </div>
           </div>
           {tx.note ? <p className="mt-1 text-xs text-muted-foreground">{tx.note}</p> : null}
         </div>

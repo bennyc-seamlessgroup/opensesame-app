@@ -48,13 +48,13 @@ export default function ProfilePage() {
                   <Settings className="h-4 w-4" />
                 </Link>
               </Button>
-              <div className="grid grid-cols-2 gap-6 text-right">
+              <div className="grid grid-cols-2 gap-3 text-right sm:gap-6">
                 <div>
-                  <p className="text-3xl font-semibold leading-none">{social.followingUserIds.length}</p>
+                  <p className="text-2xl font-semibold leading-none sm:text-3xl">{social.followingUserIds.length}</p>
                   <p className="mt-1 text-xs text-white/75">{tx("Following")}</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-semibold leading-none">{saved.length}</p>
+                  <p className="text-2xl font-semibold leading-none sm:text-3xl">{saved.length}</p>
                   <p className="mt-1 text-xs text-white/75">{tx("Saved")}</p>
                 </div>
               </div>
@@ -62,19 +62,19 @@ export default function ProfilePage() {
 
             <div className="flex items-end justify-between gap-3">
               <div className="flex min-w-0 items-end gap-3">
-                <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white/90 bg-white/15">
+                <div className="relative h-20 w-20 overflow-hidden rounded-full border-4 border-white/90 bg-white/15 sm:h-24 sm:w-24">
                   <Image src={user.avatar} alt={user.name} fill className="object-cover" sizes="96px" />
                 </div>
                 <div className="min-w-0 pb-1">
-                  <p className="truncate text-3xl font-semibold">{user.name}</p>
-                  <p className="mt-1 text-sm text-white/80">{user.diningRankLabel}</p>
+                  <p className="truncate text-2xl font-semibold sm:text-3xl">{user.name}</p>
+                  <p className="mt-1 text-xs text-white/80 sm:text-sm">{user.diningRankLabel}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <Badge className="border-0 bg-white/15 text-white hover:bg-white/15">
+                    <Badge className="border-0 bg-white/15 text-[11px] text-white hover:bg-white/15 sm:text-xs">
                       <ShieldCheck className="mr-1 h-3.5 w-3.5" />
                       {tx("Cred")} {user.reputationScore}
                     </Badge>
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-white/90">
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-white/90 sm:gap-3 sm:text-xs">
                     <span className="inline-flex items-center gap-1" aria-label={`Bronze ${nftTierSummary.Bronze}`}>
                       <span>{nftTierSummary.Bronze}</span>
                       <Medal className="h-4 w-4 text-amber-600" />
@@ -97,13 +97,16 @@ export default function ProfilePage() {
 
       <Card className="rounded-[28px] border-border/70 bg-card shadow-sm">
         <CardContent className="grid grid-cols-2 gap-3 p-4">
-          <div className="rounded-2xl bg-secondary/70 p-4 text-center">
-            <p className="text-xs text-muted-foreground">{tx("Reviews")}</p>
-            <p className="mt-2 text-3xl font-semibold text-foreground">{reviewCount}</p>
-          </div>
+          <Link href={`/user/${user.id}`} className="rounded-2xl bg-secondary/70 p-4 text-center transition hover:bg-secondary">
+            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+              <span>{tx("Reviews")}</span>
+              <span aria-hidden="true">›</span>
+            </div>
+            <p className="mt-2 text-2xl font-semibold text-foreground sm:text-3xl">{reviewCount}</p>
+          </Link>
           <div className="rounded-2xl bg-secondary/70 p-4 text-center">
             <p className="text-xs text-muted-foreground">{tx("Helped")}</p>
-            <p className="mt-2 text-3xl font-semibold text-foreground">{decisionsHelpedTotal}</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground sm:text-3xl">{decisionsHelpedTotal}</p>
           </div>
         </CardContent>
       </Card>
@@ -112,7 +115,7 @@ export default function ProfilePage() {
         <ProfileFeatureTile
           href="/profile/membership"
           icon={Ticket}
-          title="Membership Cards"
+          title="NFT Cards"
         />
         <ProfileFeatureTile
           href="/profile/preferences"
