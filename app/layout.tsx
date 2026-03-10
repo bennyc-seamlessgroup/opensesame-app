@@ -3,12 +3,20 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { AppTopHeader } from "@/components/app-top-header";
 import { BottomTabBar } from "@/components/bottom-tab-bar";
+import { PwaRegister } from "@/components/pwa-register";
 import { AppStateProvider } from "@/lib/app-state";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "OpenSesame Consumer App 2.1",
   description: "Food-first dining decisions, QR pay/verify, and reward-driven trust UX",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "OpenSesame",
+    startupImage: [],
+  },
 };
 
 export const viewport: Viewport = {
@@ -24,6 +32,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body className="bg-muted/40 font-sans antialiased">
         <AppStateProvider>
+          <PwaRegister />
           <div className="min-h-screen pb-24">
             <Suspense
               fallback={
