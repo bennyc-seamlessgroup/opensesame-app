@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, ClipboardList, CreditCard, PencilLine, Scan } from "lucide-react";
+import { ClipboardList, CreditCard, PencilLine } from "lucide-react";
 import { SectionHeader } from "@/components/section-header";
-import { PaymentPill, VerificationPill, OrderStatusPill } from "@/components/status-pills";
+import { PaymentPill, OrderStatusPill } from "@/components/status-pills";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -55,14 +55,8 @@ export default function OrdersPage() {
     let upcoming = 0;
     let history = 0;
     for (const booking of bookings) {
-      const reviewable =
-        booking.status === "COMPLETED" &&
-        booking.verificationStatus === "VERIFIED" &&
-        !reviewedIds.has(booking.id);
-      const needsAction =
-        (booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID") ||
-        (booking.status === "CONFIRMED" && booking.verificationStatus === "QR_REQUIRED") ||
-        reviewable;
+      const reviewable = booking.status === "COMPLETED" && !reviewedIds.has(booking.id);
+      const needsAction = (booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID") || reviewable;
       const inHistory = booking.status === "CANCELLED" || booking.status === "COMPLETED";
       if (needsAction) action += 1;
       if (inHistory) history += 1;
@@ -76,14 +70,8 @@ export default function OrdersPage() {
     let inProgress = 0;
     let history = 0;
     for (const order of orders) {
-      const reviewable =
-        order.status === "PICKED_UP" &&
-        order.verificationStatus === "VERIFIED" &&
-        !reviewedIds.has(order.id);
-      const needsAction =
-        (order.status !== "CANCELLED" && order.paymentStatus === "UNPAID") ||
-        (order.status !== "CANCELLED" && order.verificationStatus === "QR_REQUIRED") ||
-        reviewable;
+      const reviewable = order.status === "PICKED_UP" && !reviewedIds.has(order.id);
+      const needsAction = (order.status !== "CANCELLED" && order.paymentStatus === "UNPAID") || reviewable;
       const inHistory = order.status === "CANCELLED" || order.status === "PICKED_UP";
       const isProgress = order.status === "PLACED" || order.status === "READY";
       if (needsAction) action += 1;
@@ -98,14 +86,8 @@ export default function OrdersPage() {
     const upcoming = [];
     const history = [];
     for (const booking of sortedBookings) {
-      const reviewable =
-        booking.status === "COMPLETED" &&
-        booking.verificationStatus === "VERIFIED" &&
-        !reviewedIds.has(booking.id);
-      const needsAction =
-        (booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID") ||
-        (booking.status === "CONFIRMED" && booking.verificationStatus === "QR_REQUIRED") ||
-        reviewable;
+      const reviewable = booking.status === "COMPLETED" && !reviewedIds.has(booking.id);
+      const needsAction = (booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID") || reviewable;
       const inHistory = booking.status === "CANCELLED" || booking.status === "COMPLETED";
       if (needsAction) actionRequired.push(booking);
       else if (inHistory) history.push(booking);
@@ -119,14 +101,8 @@ export default function OrdersPage() {
     const inProgress = [];
     const history = [];
     for (const order of sortedOrders) {
-      const reviewable =
-        order.status === "PICKED_UP" &&
-        order.verificationStatus === "VERIFIED" &&
-        !reviewedIds.has(order.id);
-      const needsAction =
-        (order.status !== "CANCELLED" && order.paymentStatus === "UNPAID") ||
-        (order.status !== "CANCELLED" && order.verificationStatus === "QR_REQUIRED") ||
-        reviewable;
+      const reviewable = order.status === "PICKED_UP" && !reviewedIds.has(order.id);
+      const needsAction = (order.status !== "CANCELLED" && order.paymentStatus === "UNPAID") || reviewable;
       const inHistory = order.status === "CANCELLED" || order.status === "PICKED_UP";
       const isProgress = order.status === "PLACED" || order.status === "READY";
       if (needsAction) actionRequired.push(order);
@@ -137,27 +113,57 @@ export default function OrdersPage() {
     return { actionRequired, inProgress, history };
   }, [reviewedIds, sortedOrders]);
 
+  const getBookingSummary = (booking: (typeof bookings)[number]) => {
+    if (booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID") {
+      return tx("支付訂金後先會為你保留座位，亦可減少 no-show。");
+    }
+    if (booking.status === "CONFIRMED") {
+      return tx("已預留座位，到時到店即可。");
+    }
+    if (booking.status === "COMPLETED" && !reviewedIds.has(booking.id)) {
+      return tx("用餐已完成，可以補寫評論。");
+    }
+    if (booking.status === "COMPLETED") {
+      return tx("用餐已完成。");
+    }
+    return tx("訂座已取消。");
+  };
+
+  const getTakeawaySummary = (order: (typeof orders)[number]) => {
+    if (order.paymentStatus === "UNPAID" && order.status !== "CANCELLED") {
+      return tx("完成付款後，餐廳先會正式確認這張訂單。");
+    }
+    if (order.status === "READY") {
+      return tx("餐點已準備好，可以前往取餐。");
+    }
+    if (order.status === "PLACED") {
+      return tx("餐廳正在處理你的訂單。");
+    }
+    if (order.status === "PICKED_UP" && !reviewedIds.has(order.id)) {
+      return tx("已取餐，可以補寫評論。");
+    }
+    if (order.status === "PICKED_UP") {
+      return tx("已完成取餐。");
+    }
+    return tx("訂單已取消。");
+  };
+
   return (
     <div className="space-y-4 pb-2">
       <SectionHeader title="Orders" subtitle="Bookings & takeaway" />
 
       <Card className="border-border/80">
         <CardContent className="space-y-3 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
-                <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">Overview</p>
-                <p className="text-xs text-muted-foreground">Quick actions and history</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
             </div>
-            <Button asChild size="sm" variant="secondary" className="h-8 rounded-full px-3 text-xs">
-              <Link href="/ai">
-                {tx("用 AI 搵餐")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
-              </Link>
-            </Button>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">Overview</p>
+              <p className="text-xs text-muted-foreground">
+                {segment === "bookings" ? tx("訂枱付款、查看狀態、補寫評論。") : tx("查看付款、備餐進度與取餐記錄。")}
+              </p>
+            </div>
           </div>
 
           <Tabs value={segment} onValueChange={(v) => setSegment(v === "takeaway" ? "takeaway" : "bookings")} className="w-full">
@@ -183,9 +189,6 @@ export default function OrdersPage() {
                 <p className="text-sm font-medium text-foreground">{tx("未有訂枱記錄。")}</p>
                 <p className="text-xs text-muted-foreground">{tx("用 AI 或 Explore 搵餐廳，落訂枱就會出現喺度。")}</p>
                 <div className="flex gap-2 pt-1">
-                  <Button asChild size="sm" className="h-8 rounded-full px-3 text-xs">
-                    <Link href="/ai">{tx("去 AI")}</Link>
-                  </Button>
                   <Button asChild size="sm" variant="secondary" className="h-8 rounded-full px-3 text-xs">
                     <Link href="/explore">{tx("去 Explore")}</Link>
                   </Button>
@@ -200,15 +203,13 @@ export default function OrdersPage() {
               <div className="space-y-3">
                 {bookingSections.actionRequired.map((booking) => {
                   const restaurant = restaurants.find((item) => item.id === booking.restaurantId);
-                  const reviewable = booking.status === "COMPLETED" && booking.verificationStatus === "VERIFIED" && !reviewedIds.has(booking.id);
+                  const reviewable = booking.status === "COMPLETED" && !reviewedIds.has(booking.id);
                   const primary =
                     booking.paymentStatus === "UNPAID"
-                      ? { href: `/pay?context=booking&bookingId=${booking.id}`, label: "Pay", Icon: CreditCard, variant: "default" as const }
-                      : booking.verificationStatus === "QR_REQUIRED"
-                        ? { href: `/pay?intent=verify&context=booking&bookingId=${booking.id}`, label: "Verify", Icon: Scan, variant: "secondary" as const }
-                        : reviewable
-                          ? { href: `/review/new?restaurantId=${booking.restaurantId}&relatedType=BOOKING&relatedId=${booking.id}`, label: "Write Review", Icon: PencilLine, variant: "secondary" as const }
-                          : { href: `/orders/booking/${booking.id}`, label: "Details", Icon: ArrowRight, variant: "outline" as const };
+                      ? { href: `/pay?context=booking&bookingId=${booking.id}`, label: tx("支付訂金"), Icon: CreditCard, variant: "default" as const }
+                      : reviewable
+                        ? { href: `/review/new?restaurantId=${booking.restaurantId}&relatedType=BOOKING&relatedId=${booking.id}`, label: tx("寫評論"), Icon: PencilLine, variant: "secondary" as const }
+                        : { href: `/orders/booking/${booking.id}`, label: tx("查看詳情"), Icon: CreditCard, variant: "outline" as const };
 
                   return (
                     <Card key={booking.id} className="border-border/80">
@@ -222,10 +223,10 @@ export default function OrdersPage() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
                             <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
+                            <p className="mt-2 text-xs leading-5 text-muted-foreground">{getBookingSummary(booking)}</p>
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               <OrderStatusPill status={booking.status} />
                               <PaymentPill status={booking.paymentStatus} />
-                              <VerificationPill status={booking.verificationStatus} />
                             </div>
                           </div>
                         </div>
@@ -234,11 +235,11 @@ export default function OrdersPage() {
                           <Button asChild size="sm" variant={primary.variant} className="h-9 gap-2 rounded-xl">
                             <Link href={primary.href}>
                               <primary.Icon className="h-4 w-4" />
-                              {tx(primary.label)}
+                              {primary.label}
                             </Link>
                           </Button>
                           <Button asChild size="sm" variant="outline" className="h-9 rounded-xl">
-                            <Link href={`/orders/booking/${booking.id}`}>{tx("Details")}</Link>
+                            <Link href={`/orders/booking/${booking.id}`}>{tx("查看詳情")}</Link>
                           </Button>
                           {restaurant ? (
                             <Button asChild size="sm" variant="ghost" className="h-9 rounded-xl">
@@ -267,15 +268,15 @@ export default function OrdersPage() {
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
                             <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">{getBookingSummary(booking)}</p>
                           </div>
                           <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
-                            <Link href={`/orders/booking/${booking.id}`}>{tx("Details")}</Link>
+                            <Link href={`/orders/booking/${booking.id}`}>{tx("查看詳情")}</Link>
                           </Button>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           <OrderStatusPill status={booking.status} />
                           <PaymentPill status={booking.paymentStatus} />
-                          <VerificationPill status={booking.verificationStatus} />
                         </div>
                       </CardContent>
                     </Card>
@@ -302,15 +303,15 @@ export default function OrdersPage() {
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
                                 <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
+                                <p className="mt-1 text-xs leading-5 text-muted-foreground">{getBookingSummary(booking)}</p>
                               </div>
                               <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
-                                <Link href={`/orders/booking/${booking.id}`}>{tx("Details")}</Link>
+                                <Link href={`/orders/booking/${booking.id}`}>{tx("查看詳情")}</Link>
                               </Button>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
                               <OrderStatusPill status={booking.status} />
                               <PaymentPill status={booking.paymentStatus} />
-                              <VerificationPill status={booking.verificationStatus} />
                             </div>
                           </CardContent>
                         </Card>
@@ -330,9 +331,6 @@ export default function OrdersPage() {
                 <p className="text-sm font-medium text-foreground">{tx("未有外賣訂單。")}</p>
                 <p className="text-xs text-muted-foreground">{tx("喺餐廳頁加入購物車落單，訂單狀態就會出現喺度。")}</p>
                 <div className="flex gap-2 pt-1">
-                  <Button asChild size="sm" className="h-8 rounded-full px-3 text-xs">
-                    <Link href="/ai">{tx("去 AI")}</Link>
-                  </Button>
                   <Button asChild size="sm" variant="secondary" className="h-8 rounded-full px-3 text-xs">
                     <Link href="/cart">{tx("去購物車")}</Link>
                   </Button>
@@ -347,15 +345,13 @@ export default function OrdersPage() {
               <div className="space-y-3">
                 {takeawaySections.actionRequired.map((order) => {
                   const restaurant = restaurants.find((item) => item.id === order.restaurantId);
-                  const reviewable = order.status === "PICKED_UP" && order.verificationStatus === "VERIFIED" && !reviewedIds.has(order.id);
+                  const reviewable = order.status === "PICKED_UP" && !reviewedIds.has(order.id);
                   const primary =
                     order.paymentStatus === "UNPAID"
-                      ? { href: `/pay?context=order&orderId=${order.id}`, label: "Pay", Icon: CreditCard, variant: "default" as const }
-                      : order.verificationStatus === "QR_REQUIRED"
-                        ? { href: `/pay?intent=verify&context=order&orderId=${order.id}`, label: "Verify", Icon: Scan, variant: "secondary" as const }
-                        : reviewable
-                          ? { href: `/review/new?restaurantId=${order.restaurantId}&relatedType=TAKEAWAY&relatedId=${order.id}`, label: "Write Review", Icon: PencilLine, variant: "secondary" as const }
-                          : { href: `/orders/takeaway/${order.id}`, label: "Details", Icon: ArrowRight, variant: "outline" as const };
+                      ? { href: `/pay?context=order&orderId=${order.id}`, label: tx("立即付款"), Icon: CreditCard, variant: "default" as const }
+                      : reviewable
+                        ? { href: `/review/new?restaurantId=${order.restaurantId}&relatedType=TAKEAWAY&relatedId=${order.id}`, label: tx("寫評論"), Icon: PencilLine, variant: "secondary" as const }
+                        : { href: `/orders/takeaway/${order.id}`, label: tx("查看詳情"), Icon: CreditCard, variant: "outline" as const };
 
                   return (
                     <Card key={order.id} className="border-border/80">
@@ -371,10 +367,10 @@ export default function OrdersPage() {
                             <p className="text-xs text-muted-foreground">
                               {order.items.length} {tx("項")} • {tx("小計")} {order.subtotal} $OSM
                             </p>
+                            <p className="mt-2 text-xs leading-5 text-muted-foreground">{getTakeawaySummary(order)}</p>
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               <OrderStatusPill status={order.status} />
                               <PaymentPill status={order.paymentStatus} />
-                              <VerificationPill status={order.verificationStatus} />
                             </div>
                           </div>
                         </div>
@@ -383,11 +379,11 @@ export default function OrdersPage() {
                           <Button asChild size="sm" variant={primary.variant} className="h-9 gap-2 rounded-xl">
                             <Link href={primary.href}>
                               <primary.Icon className="h-4 w-4" />
-                              {tx(primary.label)}
+                              {primary.label}
                             </Link>
                           </Button>
                           <Button asChild size="sm" variant="outline" className="h-9 rounded-xl">
-                            <Link href={`/orders/takeaway/${order.id}`}>{tx("Details")}</Link>
+                            <Link href={`/orders/takeaway/${order.id}`}>{tx("查看詳情")}</Link>
                           </Button>
                           {restaurant ? (
                             <Button asChild size="sm" variant="ghost" className="h-9 rounded-xl">
@@ -418,15 +414,15 @@ export default function OrdersPage() {
                             <p className="text-xs text-muted-foreground">
                               {order.items.length} {tx("項")} • {tx("小計")} {order.subtotal} $OSM
                             </p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">{getTakeawaySummary(order)}</p>
                           </div>
                           <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
-                            <Link href={`/orders/takeaway/${order.id}`}>{tx("Details")}</Link>
+                            <Link href={`/orders/takeaway/${order.id}`}>{tx("查看詳情")}</Link>
                           </Button>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           <OrderStatusPill status={order.status} />
                           <PaymentPill status={order.paymentStatus} />
-                          <VerificationPill status={order.verificationStatus} />
                         </div>
                       </CardContent>
                     </Card>
@@ -455,15 +451,15 @@ export default function OrdersPage() {
                                 <p className="text-xs text-muted-foreground">
                                   {order.items.length} {tx("項")} • {tx("小計")} {order.subtotal} $OSM
                                 </p>
+                                <p className="mt-1 text-xs leading-5 text-muted-foreground">{getTakeawaySummary(order)}</p>
                               </div>
                               <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
-                                <Link href={`/orders/takeaway/${order.id}`}>{tx("Details")}</Link>
+                                <Link href={`/orders/takeaway/${order.id}`}>{tx("查看詳情")}</Link>
                               </Button>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
                               <OrderStatusPill status={order.status} />
                               <PaymentPill status={order.paymentStatus} />
-                              <VerificationPill status={order.verificationStatus} />
                             </div>
                           </CardContent>
                         </Card>

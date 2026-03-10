@@ -25,6 +25,7 @@ export function AppTopHeader() {
   const searchParams = useSearchParams();
   const isAiPage = pathname === "/ai";
   const isExplorePage = pathname === "/explore";
+  const hideHeader = pathname.startsWith("/orders") || pathname.startsWith("/wallet") || pathname.startsWith("/profile");
   const currentLocation = user.preferences.areas[0] || "Current Location";
   const [aiFilters, setAiFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS);
   const [aiSheetOpen, setAiSheetOpen] = useState(false);
@@ -83,6 +84,8 @@ export function AppTopHeader() {
     const suffix = params.toString();
     router.push(suffix ? `/explore?${suffix}` : "/explore");
   };
+
+  if (hideHeader) return null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85">

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { PaymentPill, VerificationPill, OrderStatusPill } from "@/components/status-pills";
+import { PaymentPill, OrderStatusPill } from "@/components/status-pills";
 import { SectionHeader } from "@/components/section-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,62 +41,69 @@ export default function BookingDetailPage() {
 
   const bookingTime = +new Date(booking.datetime);
   const canModify = booking.status === "CONFIRMED" && Number.isFinite(bookingTime) && bookingTime - Date.now() > 30 * 60 * 1000;
-  const canPay = booking.paymentStatus === "UNPAID" && booking.status !== "CANCELLED";
-  const canVerify = booking.verificationStatus === "QR_REQUIRED" && booking.status !== "CANCELLED";
-  const canComplete =
-    booking.status === "CONFIRMED" &&
-    booking.paymentStatus === "PAID_OSM" &&
-    (booking.verificationStatus === "VERIFIED" || booking.verificationStatus === "AUTO");
-  const canWriteReview = booking.status === "COMPLETED" && booking.verificationStatus === "VERIFIED" && !alreadyReviewed;
+  const canPay = booking.paymentStatus === "UNPAID" && booking.status === "CONFIRMED";
+  const canComplete = booking.status === "CONFIRMED" && booking.paymentStatus === "PAID_OSM";
+  const canWriteReview = booking.status === "COMPLETED" && !alreadyReviewed;
+
+  const helperText = canPay
+    ? "Pay deposit to secure your table."
+    : booking.status === "CONFIRMED"
+      ? "Your table is secured. Just arrive on time."
+      : booking.status === "COMPLETED"
+        ? "Visit completed. You can leave a review anytime."
+        : "This booking has been cancelled.";
 
   return (
     <div className="space-y-4 pb-24">
-      <SectionHeader title="Booking" subtitle="Reservation details & actions" />
+      <SectionHeader title="Booking" subtitle="Clear reservation details" />
 
       <Card className="border-border/80">
-        <CardContent className="space-y-3 p-3">
+        <CardContent className="space-y-4 p-4">
           <div className="flex gap-3">
-            <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-border/70">
+            <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-border/70">
               <Image src={restaurant.coverImage} alt={restaurant.name} fill className="object-cover" sizes="80px" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{restaurant.name}</p>
-              <p className="text-xs text-muted-foreground">{restaurant.area}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="flex-1 space-y-2">
+              <div>
+                <p className="text-base font-semibold text-foreground">{restaurant.name}</p>
+                <p className="text-sm text-muted-foreground">{restaurant.area}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
                 <OrderStatusPill status={booking.status} />
                 <PaymentPill status={booking.paymentStatus} />
-                <VerificationPill status={booking.verificationStatus} />
               </div>
             </div>
           </div>
 
-          <div className="space-y-1 text-sm">
-            <p className="text-muted-foreground">Time</p>
-            <p className="text-foreground">{formatDateTime(booking.datetime)}</p>
-            <p className="text-muted-foreground">Party size</p>
-            <p className="text-foreground">{booking.partySize}</p>
+          <div className="rounded-2xl border border-border/80 bg-muted/30 p-3 text-sm">
+            <p className="font-medium text-foreground">{helperText}</p>
+          </div>
+
+          <div className="grid gap-3 rounded-2xl border border-border/80 p-3 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Time</p>
+              <p className="mt-1 font-medium text-foreground">{formatDateTime(booking.datetime)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Party size</p>
+              <p className="mt-1 font-medium text-foreground">{booking.partySize}</p>
+            </div>
             {booking.notes ? (
-              <>
-                <p className="text-muted-foreground">Notes</p>
-                <p className="text-foreground">{booking.notes}</p>
-              </>
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Notes</p>
+                <p className="mt-1 text-foreground">{booking.notes}</p>
+              </div>
             ) : null}
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm" className="rounded-lg">
+            <Button asChild size="sm" className="rounded-xl">
               <Link href={`/restaurant/${restaurant.id}?mode=book`}>Restaurant</Link>
             </Button>
 
             {canPay ? (
-              <Button asChild size="sm" className="rounded-lg">
-                <Link href={`/pay?context=booking&bookingId=${booking.id}`}>Pay</Link>
-              </Button>
-            ) : null}
-
-            {canVerify ? (
-              <Button asChild size="sm" variant="secondary" className="rounded-lg">
-                <Link href={`/pay?intent=verify&context=booking&bookingId=${booking.id}`}>Verify</Link>
+              <Button asChild size="sm" className="rounded-xl">
+                <Link href={`/pay?context=booking&bookingId=${booking.id}`}>Pay deposit</Link>
               </Button>
             ) : null}
 
@@ -104,18 +111,18 @@ export default function BookingDetailPage() {
               <Button
                 size="sm"
                 variant="secondary"
-                className="rounded-lg"
+                className="rounded-xl"
                 onClick={() => {
                   completeBooking(booking.id);
                   router.refresh();
                 }}
               >
-                Complete visit
+                Mark visited
               </Button>
             ) : null}
 
             {canWriteReview ? (
-              <Button asChild size="sm" variant="secondary" className="rounded-lg">
+              <Button asChild size="sm" variant="secondary" className="rounded-xl">
                 <Link href={`/review/new?restaurantId=${booking.restaurantId}&relatedType=BOOKING&relatedId=${booking.id}`}>Write review</Link>
               </Button>
             ) : null}
@@ -125,7 +132,7 @@ export default function BookingDetailPage() {
             <Button
               size="sm"
               variant="outline"
-              className="rounded-lg"
+              className="rounded-xl"
               disabled={!canModify}
               onClick={() => {
                 setEditDatetime(toDateTimeLocalValue(booking.datetime));
@@ -139,7 +146,7 @@ export default function BookingDetailPage() {
             <Button
               size="sm"
               variant="outline"
-              className="rounded-lg"
+              className="rounded-xl"
               disabled={!canModify}
               onClick={() => cancelBooking(booking.id)}
             >
@@ -148,13 +155,13 @@ export default function BookingDetailPage() {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            {canModify ? "You can edit/cancel up to 30 minutes before reservation time." : "Edit/cancel window has passed."}
+            {canModify ? "You can edit or cancel up to 30 minutes before the reservation time." : "Edit and cancel are no longer available for this booking."}
           </p>
         </CardContent>
       </Card>
 
       <Card className="border-border/80">
-        <CardContent className="space-y-2 p-3">
+        <CardContent className="space-y-2 p-4">
           <SectionHeader title="Restaurant note" />
           <p className="text-sm text-muted-foreground">{restaurant.bookingNotes}</p>
         </CardContent>
@@ -201,4 +208,3 @@ export default function BookingDetailPage() {
     </div>
   );
 }
-

@@ -56,6 +56,48 @@ const priceRangeLabel = (priceRange: "$" | "$$" | "$$$" | "$$$$") => {
   return "$500+";
 };
 
+function ExploreFeedCard({
+  review,
+  restaurantName,
+  coverImage,
+  caption,
+  avatar,
+  aspectRatio,
+}: {
+  review: { id: string; userId: string; userName: string };
+  restaurantName: string;
+  coverImage: string;
+  caption: string;
+  avatar?: string;
+  aspectRatio: number;
+}) {
+  return (
+    <Link href={`/post/${review.id}`} className="block">
+      <Card className="overflow-hidden border-border/80 bg-card shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
+        <div className="relative">
+          <AspectRatio ratio={aspectRatio}>
+            <Image src={coverImage} alt={restaurantName} fill className="object-cover" sizes="(max-width: 480px) 50vw, 220px" />
+          </AspectRatio>
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent p-3">
+            <div className="flex items-center gap-2 text-white">
+              <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-white/30 bg-white/10">
+                {avatar ? <Image src={avatar} alt={review.userName} fill className="object-cover" sizes="28px" /> : null}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold">{review.userName}</p>
+                <p className="truncate text-[11px] text-white/80">{restaurantName}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <CardContent className="space-y-2 p-3">
+          <p className="line-clamp-2 text-xs leading-5 text-foreground/90">{caption}</p>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
 export function ExploreClient({ initialQuery }: { initialQuery: string }) {
   const { tx } = useI18n();
   const router = useRouter();
@@ -138,15 +180,6 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
       .sort((a, b) => score(b) - score(a))
       .slice(0, 18);
   }, [reviewerSummaries]);
-
-  const topFoodiesWithCovers = useMemo(() => {
-    const pickCover = (userId: string) => {
-      if (!restaurants.length) return "";
-      const idx = stableInt(`${userId}:cover`, 0, restaurants.length - 1);
-      return restaurants[idx]?.coverImage || restaurants[0]!.coverImage;
-    };
-    return topReviewers.map((foodie) => ({ ...foodie, coverImage: pickCover(foodie.userId) }));
-  }, [topReviewers]);
 
   const filteredFeed = useMemo(() => {
     const normalizedQuery = urlFilters.keyword.trim().toLowerCase();
@@ -259,8 +292,12 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
     return sorted.slice(0, 8);
   }, [restaurantRankingMode]);
 
+  const feedLead = filteredFeed.slice(0, 6);
+  const feedMiddle = filteredFeed.slice(6, 12);
+  const feedTail = filteredFeed.slice(12);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-4">
       <section className="space-y-3">
         <SectionHeader
           title="達人用戶"
@@ -274,7 +311,7 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
         />
         <div className="-mx-4 overflow-x-auto px-4 pb-1 scrollbar-hide">
           <div className="flex snap-x snap-mandatory gap-3">
-            {topFoodiesWithCovers.map((foodie) => (
+            {topReviewers.slice(0, 12).map((foodie) => (
               <TopFoodieCard
                 key={foodie.userId}
                 userId={foodie.userId}
@@ -282,8 +319,7 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
                 avatar={foodie.avatar}
                 credibilityScore={foodie.credibilityScore}
                 followersCount={foodie.followersCount}
-                coverImage={foodie.coverImage}
-                className="snap-start"
+                className="w-[150px] shrink-0 snap-start"
               />
             ))}
           </div>
@@ -291,13 +327,13 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
       </section>
 
       <section>
-        <Card className="border-border/80">
+        <Card className="border-border/80 bg-gradient-to-br from-card to-muted/30 shadow-sm">
           <CardContent className="flex flex-wrap items-center gap-2 p-3">
             <Button
               type="button"
               size="sm"
               variant="secondary"
-              className="h-8 rounded-full px-3 text-xs"
+              className="h-9 rounded-full px-3 text-xs"
               onClick={() => window.dispatchEvent(new Event("opensesame:openExploreLocation"))}
             >
               <MapPin className="mr-1 h-4 w-4" />
@@ -307,7 +343,7 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
               type="button"
               size="sm"
               variant="secondary"
-              className="h-8 rounded-full px-3 text-xs"
+              className="h-9 rounded-full px-3 text-xs"
               onClick={() => window.dispatchEvent(new Event("opensesame:openExploreFilters"))}
             >
               <UtensilsCrossed className="mr-1 h-4 w-4" />
@@ -317,7 +353,7 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
               type="button"
               size="sm"
               variant={urlFilters.sort === "熱門" ? "default" : "secondary"}
-              className="h-8 rounded-full px-3 text-xs"
+              className="h-9 rounded-full px-3 text-xs"
               onClick={() => {
                 const params = toSearchParams({ ...urlFilters, sort: "熱門" });
                 router.push(params.toString() ? `/explore?${params.toString()}` : "/explore");
@@ -330,7 +366,7 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
               type="button"
               size="sm"
               variant="secondary"
-              className="h-8 rounded-full px-3 text-xs"
+              className="h-9 rounded-full px-3 text-xs"
               onClick={() => {
                 const el = document.getElementById("food-ranking");
                 if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -345,25 +381,20 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
       {filteredFeed.length ? (
         <section className="space-y-6">
           <div className="grid grid-cols-2 gap-3">
-            {filteredFeed.slice(0, 10).map((review) => {
+            {feedLead.map((review, idx) => {
               const restaurant = restaurantById.get(review.restaurantId);
               const coverImage = review.photos[0] || restaurant?.coverImage || restaurants[0]!.coverImage;
-              const caption = review.text.length > 44 ? `${review.text.slice(0, 44)}…` : review.text;
+              const caption = review.text.length > 52 ? `${review.text.slice(0, 52)}…` : review.text;
               return (
-                <Link key={review.id} href={`/post/${review.id}`} className="block">
-                  <Card className="overflow-hidden border-border/80">
-                    <div className="relative w-full">
-                      <AspectRatio ratio={1}>
-                        <Image src={coverImage} alt={restaurant?.name ?? "Post"} fill className="object-cover" sizes="240px" />
-                      </AspectRatio>
-                    </div>
-                    <CardContent className="space-y-1.5 p-3">
-                      <p className="truncate text-sm font-semibold text-foreground">{review.userName}</p>
-                      <p className="truncate text-xs text-muted-foreground">{restaurant?.name ?? "Restaurant"}</p>
-                      <p className="text-xs text-foreground/90">{caption}</p>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <ExploreFeedCard
+                  key={review.id}
+                  review={review}
+                  restaurantName={restaurant?.name ?? "Restaurant"}
+                  coverImage={coverImage}
+                  caption={caption}
+                  avatar={review.userAvatar}
+                  aspectRatio={idx % 3 === 1 ? 4 / 5 : 1}
+                />
               );
             })}
           </div>
@@ -402,20 +433,29 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
               <div className="flex snap-x snap-mandatory gap-3">
                 {foodRanking.map((item, idx) => (
                   <Link key={item.intent.id} href={`/food/${item.intent.id}`} className="block snap-start">
-                    <Card className="w-[280px] shrink-0 overflow-hidden border-border/80">
+                    <Card className="w-[248px] shrink-0 overflow-hidden border-border/80 shadow-sm">
                       <div className="relative w-full">
-                        <AspectRatio ratio={16 / 10}>
-                          <Image src={item.intent.coverImage} alt={tx(item.intent.title)} fill className="object-cover" sizes="280px" />
+                        <AspectRatio ratio={4 / 3}>
+                          <Image src={item.intent.coverImage} alt={tx(item.intent.title)} fill className="object-cover" sizes="248px" />
                         </AspectRatio>
-                        <div className="absolute left-2 top-2">
-                          <Badge className="rounded-full px-2 py-0.5 text-[11px]">#{idx + 1}</Badge>
+                        <div className="absolute left-3 top-3">
+                          <Badge className="rounded-full px-2.5 py-1 text-[11px] shadow-sm">#{idx + 1}</Badge>
                         </div>
                       </div>
-                      <CardContent className="space-y-1 p-3">
-                        <p className="truncate text-sm font-semibold text-foreground">{tx(item.intent.title)}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {item.restaurant ? `${item.restaurant.name} • ${tx(item.restaurant.area)}` : "—"}
-                        </p>
+                      <CardContent className="space-y-2 p-3">
+                        <div className="space-y-1">
+                          <p className="truncate text-sm font-semibold text-foreground">{tx(item.intent.title)}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {item.restaurant ? `${item.restaurant.name} • ${tx(item.restaurant.area)}` : "—"}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(item.intent.intentTags || []).slice(0, 2).map((tag) => (
+                            <Badge key={`${item.intent.id}-${tag}`} variant="secondary" className="rounded-full px-2 py-0.5 text-[10px]">
+                              {tx(tag)}
+                            </Badge>
+                          ))}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {foodRankingMode === "最高瀏覽"
                             ? `${item.viewCount.toLocaleString()} views`
@@ -431,29 +471,26 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {filteredFeed.slice(10, 22).map((review) => {
-              const restaurant = restaurantById.get(review.restaurantId);
-              const coverImage = review.photos[0] || restaurant?.coverImage || restaurants[0]!.coverImage;
-              const caption = review.text.length > 44 ? `${review.text.slice(0, 44)}…` : review.text;
-              return (
-                <Link key={review.id} href={`/post/${review.id}`} className="block">
-                  <Card className="overflow-hidden border-border/80">
-                    <div className="relative w-full">
-                      <AspectRatio ratio={1}>
-                        <Image src={coverImage} alt={restaurant?.name ?? "Post"} fill className="object-cover" sizes="240px" />
-                      </AspectRatio>
-                    </div>
-                    <CardContent className="space-y-1.5 p-3">
-                      <p className="truncate text-sm font-semibold text-foreground">{review.userName}</p>
-                      <p className="truncate text-xs text-muted-foreground">{restaurant?.name ?? "Restaurant"}</p>
-                      <p className="text-xs text-foreground/90">{caption}</p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
+          {feedMiddle.length ? (
+            <div className="grid grid-cols-2 gap-3">
+              {feedMiddle.map((review, idx) => {
+                const restaurant = restaurantById.get(review.restaurantId);
+                const coverImage = review.photos[0] || restaurant?.coverImage || restaurants[0]!.coverImage;
+                const caption = review.text.length > 52 ? `${review.text.slice(0, 52)}…` : review.text;
+                return (
+                  <ExploreFeedCard
+                    key={review.id}
+                    review={review}
+                    restaurantName={restaurant?.name ?? "Restaurant"}
+                    coverImage={coverImage}
+                    caption={caption}
+                    avatar={review.userAvatar}
+                    aspectRatio={idx % 3 === 0 ? 4 / 5 : 1}
+                  />
+                );
+              })}
+            </div>
+          ) : null}
 
           <div id="restaurant-ranking" className="space-y-3">
             <SectionHeader
@@ -489,21 +526,36 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
               <div className="flex snap-x snap-mandatory gap-3">
                 {restaurantRanking.map((item, idx) => (
                   <Link key={item.restaurant.id} href={`/restaurant/${item.restaurant.id}`} className="block snap-start">
-                    <Card className="w-[280px] shrink-0 overflow-hidden border-border/80">
+                    <Card className="w-[248px] shrink-0 overflow-hidden border-border/80 shadow-sm">
                       <div className="relative w-full">
-                        <AspectRatio ratio={16 / 10}>
-                          <Image src={item.restaurant.coverImage} alt={item.restaurant.name} fill className="object-cover" sizes="280px" />
+                        <AspectRatio ratio={4 / 3}>
+                          <Image src={item.restaurant.coverImage} alt={item.restaurant.name} fill className="object-cover" sizes="248px" />
                         </AspectRatio>
-                        <div className="absolute left-2 top-2">
-                          <Badge className="rounded-full px-2 py-0.5 text-[11px]">#{idx + 1}</Badge>
+                        <div className="absolute left-3 top-3 flex items-center gap-2">
+                          <Badge className="rounded-full px-2.5 py-1 text-[11px] shadow-sm">#{idx + 1}</Badge>
+                          {restaurantRankingMode === "本週熱門" ? (
+                            <Badge variant="secondary" className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] text-foreground">
+                              <Flame className="mr-1 h-3 w-3" />
+                              {tx("熱門")}
+                            </Badge>
+                          ) : null}
                         </div>
                       </div>
-                      <CardContent className="space-y-1 p-3">
-                        <p className="truncate text-sm font-semibold text-foreground">{item.restaurant.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {item.restaurant.tags[0] ? `${item.restaurant.tags[0]} • ` : ""}
-                          {tx(item.restaurant.area)} • {priceRangeLabel(item.restaurant.priceRange)}
-                        </p>
+                      <CardContent className="space-y-2 p-3">
+                        <div className="space-y-1">
+                          <p className="truncate text-sm font-semibold text-foreground">{item.restaurant.name}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {item.restaurant.tags[0] ? `${tx(item.restaurant.tags[0])} • ` : ""}
+                            {tx(item.restaurant.area)} • {priceRangeLabel(item.restaurant.priceRange)}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {item.restaurant.signatureDishes.slice(0, 2).map((dish) => (
+                            <Badge key={`${item.restaurant.id}-${dish.name}`} variant="secondary" className="rounded-full px-2 py-0.5 text-[10px]">
+                              {tx(dish.name)}
+                            </Badge>
+                          ))}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {restaurantRankingMode === "高回贈"
                             ? `${tx("回贈")} ${item.restaurant.rewardYieldPct}%`
@@ -521,27 +573,22 @@ export function ExploreClient({ initialQuery }: { initialQuery: string }) {
             </div>
           </div>
 
-          {filteredFeed.length > 22 ? (
+          {feedTail.length ? (
             <div className="grid grid-cols-2 gap-3">
-              {filteredFeed.slice(22).map((review) => {
+              {feedTail.map((review, idx) => {
                 const restaurant = restaurantById.get(review.restaurantId);
                 const coverImage = review.photos[0] || restaurant?.coverImage || restaurants[0]!.coverImage;
-                const caption = review.text.length > 44 ? `${review.text.slice(0, 44)}…` : review.text;
+                const caption = review.text.length > 52 ? `${review.text.slice(0, 52)}…` : review.text;
                 return (
-                  <Link key={review.id} href={`/post/${review.id}`} className="block">
-                    <Card className="overflow-hidden border-border/80">
-                      <div className="relative w-full">
-                        <AspectRatio ratio={1}>
-                          <Image src={coverImage} alt={restaurant?.name ?? "Post"} fill className="object-cover" sizes="240px" />
-                        </AspectRatio>
-                      </div>
-                      <CardContent className="space-y-1.5 p-3">
-                        <p className="truncate text-sm font-semibold text-foreground">{review.userName}</p>
-                        <p className="truncate text-xs text-muted-foreground">{restaurant?.name ?? "Restaurant"}</p>
-                        <p className="text-xs text-foreground/90">{caption}</p>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                  <ExploreFeedCard
+                    key={review.id}
+                    review={review}
+                    restaurantName={restaurant?.name ?? "Restaurant"}
+                    coverImage={coverImage}
+                    caption={caption}
+                    avatar={review.userAvatar}
+                    aspectRatio={idx % 4 === 2 ? 4 / 5 : 1}
+                  />
                 );
               })}
             </div>

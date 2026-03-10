@@ -16,6 +16,9 @@ import { cn, formatVira } from "@/lib/utils";
 const txFilters = ["ALL", "SPEND", "EARN", "TRANSFER", "STAKE"] as const;
 type TxFilter = (typeof txFilters)[number];
 
+const formatWalletAmount = (amount: number) =>
+  amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
 export default function WalletPage() {
   const { wallet, transactions, addTransferOut, addBuy, stake, unstake } = useAppState();
   const [filter, setFilter] = useState<TxFilter>("ALL");
@@ -56,68 +59,94 @@ export default function WalletPage() {
     transferValue <= wallet.viraBalance;
 
   return (
-    <div className="space-y-4 pb-2">
-      <SectionHeader title="Wallet" subtitle="Balance, rewards, and activity" />
+    <div className="space-y-4 pb-4">
+      <section className="overflow-hidden rounded-[32px] border border-border/70 bg-card shadow-sm">
+        <div className="relative h-56">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,173,51,0.18),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.14),_transparent_28%),linear-gradient(180deg,_rgba(255,255,255,0.96)_0%,_rgba(248,250,252,1)_100%)]" />
+          <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(rgba(15,23,42,0.06)_1px,transparent_1px)] [background-size:18px_18px]" />
 
-      <Card className="border-border/80 bg-gradient-to-br from-orange-500/10 via-background to-sky-500/10">
-        <CardContent className="space-y-3 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Total Balance</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">{formatVira(totalBalance)}</p>
+          <div className="relative flex h-full flex-col justify-between p-4 text-foreground">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Total balance</p>
+                <p className="mt-2 flex items-baseline gap-1.5">
+                  <span className="text-4xl font-semibold tabular-nums">{formatWalletAmount(totalBalance)}</span>
+                  <span className="text-sm font-medium text-muted-foreground">$OSM</span>
+                </p>
+              </div>
+              <div className="shrink-0 rounded-full border border-border/70 bg-secondary px-3 py-1 text-xs font-medium text-foreground">
+                +{wallet.todayEarnings} today
+              </div>
             </div>
-            <div className="rounded-full bg-secondary px-3 py-1 text-xs text-foreground">
-              <span className="inline-flex items-center gap-1">
-                <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                Today +{wallet.todayEarnings}
-              </span>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-border/70 bg-card p-3">
+                <p className="text-[11px] text-muted-foreground">Available</p>
+                <p className="mt-1 flex items-baseline gap-1">
+                  <span className="text-lg font-semibold tabular-nums">{formatWalletAmount(wallet.viraBalance)}</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border/70 bg-card p-3">
+                <p className="text-[11px] text-muted-foreground">Staked</p>
+                <p className="mt-1 flex items-baseline gap-1">
+                  <span className="text-lg font-semibold tabular-nums">{formatWalletAmount(wallet.stakedBalance)}</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border/70 bg-card p-3">
+                <p className="text-[11px] text-muted-foreground">APY</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">{wallet.apyPct}%</p>
+              </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">Available</p>
-              <p className="mt-1 text-base font-semibold text-foreground">{formatVira(wallet.viraBalance)}</p>
-            </div>
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">Staked</p>
-              <p className="mt-1 text-base font-semibold text-foreground">{formatVira(wallet.stakedBalance)}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card px-3 py-2">
-              <p className="text-xs text-muted-foreground">APY</p>
-              <p className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                {wallet.apyPct}%
-              </p>
-            </div>
-            <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card px-3 py-2">
-              <p className="text-xs text-muted-foreground">Yearly est.</p>
-              <p className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
-                <Coins className="h-4 w-4 text-muted-foreground" />
-                {formatVira(Number((wallet.stakedBalance * wallet.apyPct / 100).toFixed(1)))}
-              </p>
-            </div>
-          </div>
-
+      <Card className="rounded-[28px] border-border/70 bg-card shadow-sm">
+        <CardContent className="space-y-4 p-4">
           <WalletActionButtons onTransfer={() => setOpenTransfer(true)} onBuy={() => setOpenBuy(true)} />
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="space-y-3 p-4">
+      <Card className="rounded-[28px] border-border/70 bg-card shadow-sm">
+        <CardContent className="space-y-4 p-4">
           <SectionHeader
             title="Staking"
-            subtitle="Lock $OSM to earn yield (demo)"
+            subtitle="Lock $OSM to earn yield"
             action={
-              <div className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs text-foreground">
-                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-foreground">
+                <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
                 {wallet.apyPct}% APY
               </div>
             }
           />
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-secondary/70 p-4 text-center">
+              <p className="text-xs text-muted-foreground">APY</p>
+              <p className="mt-2 inline-flex items-center gap-1 text-2xl font-semibold text-foreground tabular-nums">
+                <TrendingUp className="h-5 w-5 text-sky-500" />
+                {wallet.apyPct}%
+              </p>
+            </div>
+            <div className="rounded-2xl bg-secondary/70 p-4 text-center">
+              <p className="text-xs text-muted-foreground">Projected yearly</p>
+              <p className="mt-2 inline-flex items-baseline justify-center gap-1 text-2xl font-semibold text-foreground">
+                <Coins className="h-5 w-5 text-amber-500" />
+                <span className="tabular-nums">{formatWalletAmount(Number((wallet.stakedBalance * wallet.apyPct / 100).toFixed(1)))}</span>
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
+              </p>
+            </div>
+            <div className="rounded-2xl bg-secondary/70 p-4 text-center">
+              <p className="text-xs text-muted-foreground">Today earned</p>
+              <p className="mt-2 inline-flex items-baseline justify-center gap-1 text-2xl font-semibold text-foreground">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                <span className="tabular-nums">{formatWalletAmount(wallet.todayEarnings)}</span>
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
+              </p>
+            </div>
+          </div>
 
           <Tabs value={stakingTab} onValueChange={(v) => setStakingTab(v === "unstake" ? "unstake" : "stake")} className="w-full">
             <TabsList className="h-11 w-full rounded-full bg-muted p-1">
@@ -133,7 +162,7 @@ export default function WalletPage() {
           {stakingTab === "stake" ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Available: {formatVira(wallet.viraBalance)}</span>
+                <span>Available: {formatWalletAmount(wallet.viraBalance)} $OSM</span>
                 <div className="flex gap-1">
                   {[0.25, 0.5, 1].map((pct) => (
                     <button
@@ -158,7 +187,7 @@ export default function WalletPage() {
           ) : (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Staked: {formatVira(wallet.stakedBalance)}</span>
+                <span>Staked: {formatWalletAmount(wallet.stakedBalance)} $OSM</span>
                 <div className="flex gap-1">
                   {[0.25, 0.5, 1].map((pct) => (
                     <button
@@ -184,9 +213,9 @@ export default function WalletPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="space-y-3 p-4">
-          <SectionHeader title="Transaction History" />
+      <Card className="rounded-[28px] border-border/70 bg-card shadow-sm">
+        <CardContent className="space-y-4 p-4">
+          <SectionHeader title="Transaction History" subtitle="Recent wallet activity" />
           <div className="flex flex-wrap gap-2">
             {txFilters.map((item) => (
               <button
@@ -212,11 +241,11 @@ export default function WalletPage() {
 
       <Dialog open={openTransfer} onOpenChange={setOpenTransfer}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Transfer $OSM</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Transfer</DialogTitle></DialogHeader>
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Available: {formatVira(wallet.viraBalance)}</p>
+            <p className="text-xs text-muted-foreground">Available: {formatWalletAmount(wallet.viraBalance)} $OSM</p>
             <Input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="Recipient" />
-            <Input value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} placeholder="Amount" />
+            <Input value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} placeholder="Amount ($OSM)" />
             <Input value={transferNote} onChange={(e) => setTransferNote(e.target.value)} placeholder="Note" />
             {!canTransfer ? <p className="text-xs text-muted-foreground">Enter a recipient and an amount ≤ available balance.</p> : null}
           </div>
@@ -236,17 +265,21 @@ export default function WalletPage() {
 
       <Dialog open={openBuy} onOpenChange={setOpenBuy}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Buy More $OSM</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Buy More</DialogTitle></DialogHeader>
           <div className="grid grid-cols-3 gap-2">
             {[50, 100, 200].map((amount) => (
               <Button key={amount} variant={buyAmount === amount ? "default" : "secondary"} onClick={() => setBuyAmount(amount)} className="h-10 rounded-xl">
-                {amount} $OSM
+                <span className="tabular-nums">{amount}</span>
+                <span className="text-[10px] font-medium uppercase tracking-wide opacity-80">$OSM</span>
               </Button>
             ))}
           </div>
           <div className="rounded-xl border border-border/80 bg-card p-3">
             <p className="text-sm font-medium text-foreground">You will receive</p>
-            <p className="mt-1 text-lg font-semibold text-foreground">{formatVira(buyAmount)}</p>
+            <p className="mt-1 flex items-baseline gap-1 text-lg font-semibold text-foreground">
+              <span className="tabular-nums">{formatWalletAmount(buyAmount)}</span>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">$OSM</span>
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">Payment method: Card (placeholder)</p>
           </div>
           <DialogFooter>

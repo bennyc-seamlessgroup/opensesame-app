@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
-import { PaymentPill, VerificationPill, OrderStatusPill } from "@/components/status-pills";
+import { PaymentPill, OrderStatusPill } from "@/components/status-pills";
 import { SectionHeader } from "@/components/section-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,42 +27,53 @@ export default function TakeawayOrderDetailPage() {
   if (!order || !restaurant) return <p className="text-sm text-muted-foreground">Order not found.</p>;
 
   const canPay = order.paymentStatus === "UNPAID" && order.status !== "CANCELLED";
-  const canVerify = order.verificationStatus === "QR_REQUIRED" && order.status !== "CANCELLED";
   const canCancel = order.status === "PLACED" && order.paymentStatus === "UNPAID";
   const canMarkReady = order.status === "PLACED" && order.paymentStatus === "PAID_OSM" && order.status !== "CANCELLED";
-  const canPickUp =
-    order.status === "READY" &&
-    order.paymentStatus === "PAID_OSM" &&
-    (order.verificationStatus === "VERIFIED" || order.verificationStatus === "AUTO");
-  const canWriteReview = order.status === "PICKED_UP" && order.verificationStatus === "VERIFIED" && !alreadyReviewed;
+  const canPickUp = order.status === "READY" && order.paymentStatus === "PAID_OSM";
+  const canWriteReview = order.status === "PICKED_UP" && !alreadyReviewed;
+
+  const helperText = canPay
+    ? "Complete payment to confirm this takeaway order."
+    : order.status === "READY"
+      ? "Your order is ready for pickup."
+      : order.status === "PLACED"
+        ? "The restaurant is preparing your order."
+        : order.status === "PICKED_UP"
+          ? "Pickup completed. You can leave a review anytime."
+          : "This order has been cancelled.";
 
   return (
     <div className={cn("space-y-4 pb-24", "theme-takeaway")}>
-      <SectionHeader title="Takeaway" subtitle="Order details & pickup flow" />
+      <SectionHeader title="Takeaway" subtitle="Clear order and pickup status" />
 
       <Card className="border-border/80">
-        <CardContent className="space-y-3 p-3">
+        <CardContent className="space-y-4 p-4">
           <div className="flex gap-3">
-            <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-border/70">
+            <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-border/70">
               <Image src={restaurant.coverImage} alt={restaurant.name} fill className="object-cover" sizes="80px" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{restaurant.name}</p>
-              <p className="text-xs text-muted-foreground">{restaurant.area}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="flex-1 space-y-2">
+              <div>
+                <p className="text-base font-semibold text-foreground">{restaurant.name}</p>
+                <p className="text-sm text-muted-foreground">{restaurant.area}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
                 <OrderStatusPill status={order.status} />
                 <PaymentPill status={order.paymentStatus} />
-                <VerificationPill status={order.verificationStatus} />
               </div>
             </div>
           </div>
 
-          <div className="space-y-2 rounded-lg border border-border/80 p-3 text-sm">
+          <div className="rounded-2xl border border-border/80 bg-muted/30 p-3 text-sm">
+            <p className="font-medium text-foreground">{helperText}</p>
+          </div>
+
+          <div className="space-y-2 rounded-2xl border border-border/80 p-3 text-sm">
             {order.items.map((line) => {
               const menuItem = restaurant.takeawayMenu.find((item) => item.id === line.menuItemId);
               if (!menuItem) return null;
               return (
-                <div key={line.menuItemId} className="flex items-center justify-between">
+                <div key={line.menuItemId} className="flex items-center justify-between gap-3">
                   <span className="text-foreground">{menuItem.name} × {line.qty}</span>
                   <span className="text-muted-foreground">{formatHKD(menuItem.price * line.qty)}</span>
                 </div>
@@ -79,36 +90,30 @@ export default function TakeawayOrderDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm" className="rounded-lg">
+            <Button asChild size="sm" className="rounded-xl">
               <Link href={`/restaurant/${restaurant.id}?mode=takeaway`}>Restaurant</Link>
             </Button>
 
             {canPay ? (
-              <Button asChild size="sm" className="rounded-lg">
-                <Link href={`/pay?context=order&orderId=${order.id}`}>Pay</Link>
-              </Button>
-            ) : null}
-
-            {canVerify ? (
-              <Button asChild size="sm" variant="secondary" className="rounded-lg">
-                <Link href={`/pay?intent=verify&context=order&orderId=${order.id}`}>Verify</Link>
+              <Button asChild size="sm" className="rounded-xl">
+                <Link href={`/pay?context=order&orderId=${order.id}`}>Pay now</Link>
               </Button>
             ) : null}
 
             {canMarkReady ? (
-              <Button size="sm" variant="secondary" className="rounded-lg" onClick={() => markOrderReady(order.id)}>
-                Restaurant ready
+              <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => markOrderReady(order.id)}>
+                Mark ready
               </Button>
             ) : null}
 
             {canPickUp ? (
-              <Button size="sm" variant="secondary" className="rounded-lg" onClick={() => markOrderPickedUp(order.id)}>
-                Picked up
+              <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => markOrderPickedUp(order.id)}>
+                Mark picked up
               </Button>
             ) : null}
 
             {canWriteReview ? (
-              <Button asChild size="sm" variant="secondary" className="rounded-lg">
+              <Button asChild size="sm" variant="secondary" className="rounded-xl">
                 <Link href={`/review/new?restaurantId=${order.restaurantId}&relatedType=TAKEAWAY&relatedId=${order.id}`}>Write review</Link>
               </Button>
             ) : null}
@@ -117,19 +122,14 @@ export default function TakeawayOrderDetailPage() {
           <Button
             size="sm"
             variant="outline"
-            className="w-full rounded-lg"
+            className="w-full rounded-xl"
             disabled={!canCancel}
             onClick={() => cancelOrder(order.id)}
           >
             Cancel order
           </Button>
-
-          <p className="text-xs text-muted-foreground">
-            {restaurant.livePosSync ? "Live sync enabled: payment can auto-verify." : "Non-integrated POS: pay first, then scan VERIFY QR at pickup."}
-          </p>
         </CardContent>
       </Card>
     </div>
   );
 }
-

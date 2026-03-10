@@ -1,6 +1,6 @@
 import { ReviewerProfileClient } from "@/app/user/[userId]/reviewer-profile-client";
 
-export default function ReviewerProfilePage({ params }: { params: { userId: string } }) {
-  return <ReviewerProfileClient userId={params.userId} />;
+export default async function ReviewerProfilePage({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params;
+  return <ReviewerProfileClient userId={userId} />;
 }
-

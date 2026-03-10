@@ -2,232 +2,144 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Award, Bookmark, Compass, Heart, Settings, Share2, ShieldCheck, Wallet } from "lucide-react";
+import { Banknote, Heart, MapPin, Medal, Settings, ShieldCheck, Ticket, UtensilsCrossed, Wallet } from "lucide-react";
 import { useMemo } from "react";
-import { ExploreRestaurantCard } from "@/components/explore-restaurant-card";
+import { ProfileFeatureTile } from "@/components/profile/profile-feature-tile";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SectionHeader } from "@/components/section-header";
 import { useAppState } from "@/lib/app-state";
 import { useI18n } from "@/lib/i18n";
-import { restaurants, user } from "@/lib/mock-data";
-import { formatVira } from "@/lib/utils";
+import { membershipCards, restaurants, user } from "@/lib/mock-data";
 
 export default function ProfilePage() {
   const { tx } = useI18n();
-  const { reviews, social, wallet } = useAppState();
+  const { reviews, social, membership } = useAppState();
   const saved = restaurants.filter((restaurant) => user.savedRestaurantIds.includes(restaurant.id));
   const visited = restaurants.filter((restaurant) => user.visitedRestaurantIds.includes(restaurant.id));
+  const ownedCards = membershipCards.filter((card) => membership.ownedCardIds.includes(card.id));
 
   const reviewCount = reviews.length;
-  const aiCitationsTotal = useMemo(() => reviews.reduce((acc, review) => acc + review.aiCitations, 0), [reviews]);
   const decisionsHelpedTotal = useMemo(() => reviews.reduce((acc, review) => acc + review.helpedDecisions, 0), [reviews]);
+  const nftTierSummary = useMemo(() => {
+    const counts = { Bronze: 0, Silver: 0, Gold: 0 };
+    for (const card of ownedCards) counts[card.tier] += 1;
+    return counts;
+  }, [ownedCards]);
 
   return (
-    <div className="space-y-4 pb-2">
-      <Card className="border-border/80 bg-gradient-to-br from-orange-500/10 via-background to-sky-500/10">
-        <CardContent className="space-y-3 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="relative h-14 w-14 overflow-hidden rounded-full border border-border/70 bg-muted">
-                <Image src={user.avatar} alt={user.name} fill className="object-cover" sizes="56px" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-base font-semibold text-foreground">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.diningRankLabel}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary" className="inline-flex items-center gap-1 text-[10px]">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    <span>{tx("Cred")} {user.reputationScore}</span>
-                  </Badge>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {tx("Verified")} {user.verifiedRatioPct}%
-                  </Badge>
+    <div className="space-y-4 pb-4">
+      <section className="overflow-hidden rounded-[32px] border border-border/70 bg-card shadow-sm">
+        <div className="relative h-56">
+          <Image
+            src="/images/food/paella.jpg"
+            alt="Food background"
+            fill
+            className="scale-110 object-cover blur-sm"
+            sizes="(max-width: 768px) 100vw, 480px"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/45 to-black/55" />
+          <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:18px_18px]" />
+
+          <div className="relative flex h-full flex-col justify-between p-4 text-white">
+            <div className="flex items-start justify-between gap-3">
+              <Button asChild variant="secondary" size="icon" className="h-10 w-10 rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/20">
+                <Link href="/settings">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+              <div className="grid grid-cols-2 gap-6 text-right">
+                <div>
+                  <p className="text-3xl font-semibold leading-none">{social.followingUserIds.length}</p>
+                  <p className="mt-1 text-xs text-white/75">{tx("Following")}</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-semibold leading-none">{saved.length}</p>
+                  <p className="mt-1 text-xs text-white/75">{tx("Saved")}</p>
                 </div>
               </div>
             </div>
 
-            <Button asChild variant="secondary" size="icon" className="h-9 w-9 rounded-full" aria-label="Settings">
-              <Link href="/settings">
-                <Settings className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">{tx("Wallet")}</p>
-              <p className="mt-1 text-sm font-semibold text-foreground">
-                {formatVira(wallet.viraBalance + wallet.stakedBalance)}
-              </p>
-            </div>
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">{tx("Saved")}</p>
-              <p className="mt-1 text-sm font-semibold text-foreground">{social.savedReviewIds.length}</p>
-            </div>
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">{tx("Following")}</p>
-              <p className="mt-1 text-sm font-semibold text-foreground">{social.followingUserIds.length}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
-            <Button asChild variant="secondary" className="h-10 flex-col gap-1 rounded-xl px-2 text-xs">
-              <Link href="/wallet">
-                <Wallet className="h-4 w-4" />
-                {tx("Wallet")}
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="h-10 flex-col gap-1 rounded-xl px-2 text-xs">
-              <Link href="/orders">
-                <Award className="h-4 w-4" />
-                {tx("Orders")}
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="h-10 flex-col gap-1 rounded-xl px-2 text-xs">
-              <Link href="/favorites">
-                <Heart className="h-4 w-4" />
-                {tx("Favs")}
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="h-10 flex-col gap-1 rounded-xl px-2 text-xs">
-              <Link href="/saved">
-                <Bookmark className="h-4 w-4" />
-                {tx("Saved")}
-              </Link>
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button asChild variant="secondary" className="h-10 gap-2 rounded-xl">
-              <Link href="/referral">
-                <Share2 className="h-4 w-4" />
-                {tx("Referral Hub")}
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="h-10 gap-2 rounded-xl">
-              <Link href="/explore">
-                <Compass className="h-4 w-4" />
-                {tx("Explore")}
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="space-y-2 p-4">
-          <SectionHeader
-            title={tx("飲食偏好")}
-            subtitle={tx("用嚟提升推薦準確度")}
-            action={
-              <Button asChild size="sm" variant="secondary" className="h-8 rounded-full px-3 text-xs">
-                <Link href="/settings">{tx("Edit")}</Link>
-              </Button>
-            }
-          />
-
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">{tx("菜式")}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {user.preferences.cuisines.slice(0, 10).map((cuisine) => (
-                  <Badge key={cuisine} variant="secondary" className="text-[11px]">
-                    {cuisine}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">{tx("地區")}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {user.preferences.areas.slice(0, 8).map((area) => (
-                  <Badge key={area} variant="outline" className="text-[11px]">
-                    {tx(area)}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-secondary p-3">
-                <p className="text-xs text-muted-foreground">{tx("Budget")}</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{user.preferences.budgetRange}</p>
-              </div>
-              <div className="rounded-xl bg-secondary p-3">
-                <p className="text-xs text-muted-foreground">{tx("Dietary")}</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {user.preferences.dietaryRestrictions.length ? user.preferences.dietaryRestrictions.join(", ") : "—"}
-                </p>
+            <div className="flex items-end justify-between gap-3">
+              <div className="flex min-w-0 items-end gap-3">
+                <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white/90 bg-white/15">
+                  <Image src={user.avatar} alt={user.name} fill className="object-cover" sizes="96px" />
+                </div>
+                <div className="min-w-0 pb-1">
+                  <p className="truncate text-3xl font-semibold">{user.name}</p>
+                  <p className="mt-1 text-sm text-white/80">{user.diningRankLabel}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Badge className="border-0 bg-white/15 text-white hover:bg-white/15">
+                      <ShieldCheck className="mr-1 h-3.5 w-3.5" />
+                      {tx("Cred")} {user.reputationScore}
+                    </Badge>
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-white/90">
+                    <span className="inline-flex items-center gap-1" aria-label={`Bronze ${nftTierSummary.Bronze}`}>
+                      <span>{nftTierSummary.Bronze}</span>
+                      <Medal className="h-4 w-4 text-amber-600" />
+                    </span>
+                    <span className="inline-flex items-center gap-1" aria-label={`Silver ${nftTierSummary.Silver}`}>
+                      <span>{nftTierSummary.Silver}</span>
+                      <Medal className="h-4 w-4 text-slate-300" />
+                    </span>
+                    <span className="inline-flex items-center gap-1" aria-label={`Gold ${nftTierSummary.Gold}`}>
+                      <span>{nftTierSummary.Gold}</span>
+                      <Medal className="h-4 w-4 text-yellow-400" />
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="space-y-2 p-4">
-          <SectionHeader title={tx("貢獻")} subtitle={tx("你嘅食評影響力（demo）")} />
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">{tx("Reviews")}</p>
-              <p className="mt-1 text-sm font-semibold text-foreground">{reviewCount}</p>
-            </div>
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">{tx("AI citations")}</p>
-              <p className="mt-1 text-sm font-semibold text-foreground">{aiCitationsTotal}</p>
-            </div>
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">{tx("Helped")}</p>
-              <p className="mt-1 text-sm font-semibold text-foreground">{decisionsHelpedTotal}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <section className="space-y-3">
-        <SectionHeader title={tx("收藏餐廳")} subtitle={saved.length ? `${saved.length} ${tx("間")}` : tx("未有收藏")} action={<Button asChild size="sm" variant="secondary" className="h-8 rounded-full px-3 text-xs"><Link href="/favorites">{tx("View")}</Link></Button>} />
-        {saved.length ? (
-          <div className="-mx-4 overflow-x-auto px-4 pb-1 scrollbar-hide">
-            <div className="flex snap-x snap-mandatory gap-3">
-              {saved.map((restaurant) => (
-                <ExploreRestaurantCard key={restaurant.id} restaurant={restaurant} mode="all" className="w-[320px] shrink-0 snap-start" />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <Card className="border-border/80">
-            <CardContent className="space-y-2 p-4">
-              <p className="text-sm font-medium text-foreground">{tx("未有收藏餐廳。")}</p>
-              <Button asChild size="sm" className="h-8 rounded-full px-3 text-xs">
-                <Link href="/explore">{tx("去 Explore")}</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        </div>
       </section>
 
-      <section className="space-y-3">
-        <SectionHeader title={tx("去過餐廳")} subtitle={visited.length ? `${visited.length} ${tx("間")}` : tx("未有到訪")} />
-        {visited.length ? (
-          <div className="-mx-4 overflow-x-auto px-4 pb-1 scrollbar-hide">
-            <div className="flex snap-x snap-mandatory gap-3">
-              {visited.map((restaurant) => (
-                <ExploreRestaurantCard key={restaurant.id} restaurant={restaurant} mode="all" className="w-[320px] shrink-0 snap-start" />
-              ))}
-            </div>
+      <Card className="rounded-[28px] border-border/70 bg-card shadow-sm">
+        <CardContent className="grid grid-cols-2 gap-3 p-4">
+          <div className="rounded-2xl bg-secondary/70 p-4 text-center">
+            <p className="text-xs text-muted-foreground">{tx("Reviews")}</p>
+            <p className="mt-2 text-3xl font-semibold text-foreground">{reviewCount}</p>
           </div>
-        ) : (
-          <Card className="border-border/80">
-            <CardContent className="space-y-2 p-4">
-              <p className="text-sm font-medium text-foreground">{tx("未有到訪記錄。")}</p>
-              <p className="text-xs text-muted-foreground">{tx("完成交易（pay + verify）後，會出現到訪紀錄。")}</p>
-            </CardContent>
-          </Card>
-        )}
-      </section>
+          <div className="rounded-2xl bg-secondary/70 p-4 text-center">
+            <p className="text-xs text-muted-foreground">{tx("Helped")}</p>
+            <p className="mt-2 text-3xl font-semibold text-foreground">{decisionsHelpedTotal}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-3">
+        <ProfileFeatureTile
+          href="/profile/membership"
+          icon={Ticket}
+          title="Membership Cards"
+        />
+        <ProfileFeatureTile
+          href="/profile/preferences"
+          icon={UtensilsCrossed}
+          title="Dining Preferences"
+        />
+        <ProfileFeatureTile
+          href="/profile/saved-restaurants"
+          icon={Heart}
+          title="Saved Restaurants"
+        />
+        <ProfileFeatureTile
+          href="/profile/visited-restaurants"
+          icon={MapPin}
+          title="Visited Restaurants"
+        />
+        <ProfileFeatureTile
+          href="/wallet"
+          icon={Wallet}
+          title="Wallet"
+        />
+        <ProfileFeatureTile
+          href="/orders"
+          icon={Banknote}
+          title="Orders"
+        />
+      </div>
     </div>
   );
 }

@@ -68,6 +68,11 @@ type SocialState = {
   transactionVotes: Record<string, TransactionVote>; // keyed by `${relatedType}:${relatedId}`
 };
 
+type MembershipState = {
+  ownedCardIds: string[]; // membershipCards[].id (restaurantId)
+  activeCardId: string | null;
+};
+
 export type AppLocale = "en" | "zh-HK";
 
 type AppStateContextType = {
@@ -80,6 +85,7 @@ type AppStateContextType = {
   reviews: Review[];
   aiPreferences: AiPreferences;
   social: SocialState;
+  membership: MembershipState;
   pendingVoteTasks: PendingVoteTask[];
   bookingDraft: BookingDraft | null;
   cartDraft: CartDraft;
@@ -129,6 +135,9 @@ type AppStateContextType = {
     tags: string[];
     photos: string[];
   }) => void;
+  addMembershipCard: (cardId: string) => void;
+  removeMembershipCard: (cardId: string) => void;
+  setActiveMembershipCard: (cardId: string) => void;
 };
 
 const STORAGE_KEY = "opensesame-consumer-app-2-1";
@@ -174,6 +183,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     savedReviewIds: [],
     transactionVotes: {},
   });
+  const [membership, setMembership] = useState<MembershipState>({
+    ownedCardIds: user.membershipCardIds || [],
+    activeCardId: user.membershipCardIds?.[0] ?? null,
+  });
   const [bookingDraft, setBookingDraftState] = useState<BookingDraft | null>(null);
   const [cartDraft, setCartDraft] = useState<CartDraft>({});
 
@@ -195,6 +208,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         reviews: Review[];
         aiPreferences?: AiPreferences;
         social?: SocialState;
+        membership?: MembershipState;
         bookingDraft: BookingDraft | null;
         cartDraft: CartDraft;
       };
@@ -235,6 +249,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         savedReviewIds: nextSocial.savedReviewIds || [],
         transactionVotes: migratedTransactionVotes,
       });
+      const nextMembership = data.membership;
+      setMembership({
+        ownedCardIds: Array.isArray(nextMembership?.ownedCardIds)
+          ? nextMembership!.ownedCardIds.filter((id) => typeof id === "string")
+          : (user.membershipCardIds || []),
+        activeCardId: typeof nextMembership?.activeCardId === "string"
+          ? nextMembership!.activeCardId
+          : (user.membershipCardIds?.[0] ?? null),
+      });
       setBookingDraftState(data.bookingDraft || null);
       setCartDraft(data.cartDraft || {});
       if (usingLegacy) localStorage.removeItem(LEGACY_STORAGE_KEY);
@@ -250,9 +273,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!isHydrated) return;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ locale, wallet, bookings, orders, transactions, reviews, aiPreferences, social, bookingDraft, cartDraft })
+      JSON.stringify({ locale, wallet, bookings, orders, transactions, reviews, aiPreferences, social, membership, bookingDraft, cartDraft })
     );
-  }, [locale, wallet, bookings, orders, transactions, reviews, aiPreferences, social, bookingDraft, cartDraft, isHydrated]);
+  }, [locale, wallet, bookings, orders, transactions, reviews, aiPreferences, social, membership, bookingDraft, cartDraft, isHydrated]);
 
   const setBookingDraft = (draft: BookingDraft) => setBookingDraftState(draft);
   const clearBookingDraft = () => setBookingDraftState(null);
@@ -465,9 +488,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!booking) return;
     if (booking.status === "COMPLETED") return;
     if (booking.paymentStatus !== "PAID_OSM") return;
-    if (booking.verificationStatus !== "VERIFIED" && booking.verificationStatus !== "AUTO") return;
-
-    setBookings((prev) => prev.map((item) => (item.id === bookingId ? { ...item, status: "COMPLETED" } : item)));
+    setBookings((prev) => prev.map((item) => (item.id === bookingId ? { ...item, status: "COMPLETED", verificationStatus: item.verificationStatus === "AUTO" ? "AUTO" : "VERIFIED" } : item)));
     ensurePendingVoteTask({ contextType: "BOOKING", contextId: bookingId, restaurantId: booking.restaurantId });
 
     const rewardAmount = Math.max(2, Math.round(booking.rewardEstimateVira));
@@ -525,9 +546,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!order) return;
     if (order.status === "PICKED_UP") return;
     if (order.paymentStatus !== "PAID_OSM") return;
-    if (order.verificationStatus !== "VERIFIED" && order.verificationStatus !== "AUTO") return;
-
-    setOrders((prev) => prev.map((item) => (item.id === orderId ? { ...item, status: "PICKED_UP" } : item)));
+    setOrders((prev) => prev.map((item) => (item.id === orderId ? { ...item, status: "PICKED_UP", verificationStatus: item.verificationStatus === "AUTO" ? "AUTO" : "VERIFIED" } : item)));
     ensurePendingVoteTask({ contextType: "TAKEAWAY", contextId: orderId, restaurantId: order.restaurantId });
 
     const rewardAmount = Math.max(2, Math.round(order.rewardEstimateVira));
@@ -804,6 +823,31 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const addMembershipCard = (cardId: string) => {
+    if (!cardId) return;
+    setMembership((prev) => {
+      if (prev.ownedCardIds.includes(cardId)) return prev;
+      const ownedCardIds = [...prev.ownedCardIds, cardId];
+      const activeCardId = prev.activeCardId ?? cardId;
+      return { ownedCardIds, activeCardId };
+    });
+  };
+
+  const removeMembershipCard = (cardId: string) => {
+    if (!cardId) return;
+    setMembership((prev) => {
+      if (!prev.ownedCardIds.includes(cardId)) return prev;
+      const ownedCardIds = prev.ownedCardIds.filter((id) => id !== cardId);
+      const activeCardId = prev.activeCardId === cardId ? (ownedCardIds[0] ?? null) : prev.activeCardId;
+      return { ownedCardIds, activeCardId };
+    });
+  };
+
+  const setActiveMembershipCard = (cardId: string) => {
+    if (!cardId) return;
+    setMembership((prev) => ({ ...prev, activeCardId: cardId }));
+  };
+
   const hasCompletedTransaction = (restaurantId: string) => {
     if (!restaurantId) return false;
     if (user.visitedRestaurantIds?.includes(restaurantId)) return true;
@@ -917,6 +961,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       reviews,
       aiPreferences,
       social,
+      membership,
       pendingVoteTasks: aiPreferences.pendingVoteTasks,
       bookingDraft,
       cartDraft,
@@ -948,6 +993,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       voteOnReview,
       hasCompletedTransaction,
       getUnusedVoteContexts,
+      addMembershipCard,
+      removeMembershipCard,
+      setActiveMembershipCard,
     }),
     [
       locale,
@@ -958,6 +1006,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       reviews,
       aiPreferences,
       social,
+      membership,
       bookingDraft,
       cartDraft,
     ]

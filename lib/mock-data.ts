@@ -88,7 +88,6 @@ export type User = {
   name: string;
   avatar: string;
   reputationScore: number;
-  verifiedRatioPct: number;
   diningRankLabel: string;
   preferences: {
     cuisines: string[];
@@ -113,6 +112,25 @@ export type User = {
   };
   savedRestaurantIds: string[];
   visitedRestaurantIds: string[];
+  membershipCardIds: string[];
+};
+
+export type MembershipCardOffer = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  discountLabel: string;
+  terms?: string;
+};
+
+export type MembershipCard = {
+  id: string; // restaurantId
+  restaurantId: string;
+  name: string;
+  image: string;
+  tier: "Bronze" | "Silver" | "Gold";
+  theme: "orange" | "sky" | "emerald" | "violet";
+  offers: MembershipCardOffer[];
 };
 
 export type Booking = {
@@ -437,12 +455,86 @@ export const restaurants: Restaurant[] = [
   },
 ];
 
+export const membershipCards: MembershipCard[] = [
+  {
+    id: "mano-the-l-square",
+    restaurantId: "mano-the-l-square",
+    name: "MANO Membership",
+    image: "/images/membership/mano_membership.png",
+    tier: "Gold",
+    theme: "violet",
+    offers: [
+      { id: "mano-1", title: "10% off handmade pasta", subtitle: "Mon–Thu dinner", discountLabel: "10% OFF", terms: "Dine-in only. Excludes set menus." },
+      { id: "mano-2", title: "Birthday dessert on the house", subtitle: "Birthday month", discountLabel: "FREE", terms: "One per member. Show ID at checkout." },
+    ],
+  },
+  {
+    id: "umi-cwb",
+    restaurantId: "umi-cwb",
+    name: "UMI Membership",
+    image: "/images/membership/umi_membership.png",
+    tier: "Bronze",
+    theme: "sky",
+    offers: [
+      { id: "umi-1", title: "Free upgrade to oat milk", subtitle: "Any latte", discountLabel: "FREE", terms: "One upgrade per order." },
+      { id: "umi-2", title: "Brunch set discount", subtitle: "Weekends 11:00–14:00", discountLabel: "HK$20 OFF", terms: "Minimum spend HK$120." },
+    ],
+  },
+  {
+    id: "casamigos",
+    restaurantId: "casamigos",
+    name: "Casamigos Membership",
+    image: "/images/membership/casamigos_membership.png",
+    tier: "Silver",
+    theme: "orange",
+    offers: [
+      { id: "casa-1", title: "Tapas bundle deal", subtitle: "Choose 3 tapas", discountLabel: "HK$60 OFF", terms: "Dine-in only. Limited to selected tapas." },
+      { id: "casa-2", title: "Wine-by-the-glass promo", subtitle: "Sun–Thu", discountLabel: "2nd 50%", terms: "Same wine only." },
+    ],
+  },
+  {
+    id: "milu-thai",
+    restaurantId: "milu-thai",
+    name: "Milu Thai Membership",
+    image: "/images/membership/miluThai_membership.png",
+    tier: "Silver",
+    theme: "emerald",
+    offers: [
+      { id: "milu-1", title: "Green curry discount", subtitle: "Takeaway & dine-in", discountLabel: "HK$15 OFF", terms: "One per order." },
+      { id: "milu-2", title: "Free iced Thai tea", subtitle: "With any main", discountLabel: "FREE", terms: "While stocks last." },
+    ],
+  },
+  {
+    id: "atas",
+    restaurantId: "atas",
+    name: "A.T.A.S Membership",
+    image: "/images/membership/atas_membership.png",
+    tier: "Bronze",
+    theme: "sky",
+    offers: [
+      { id: "atas-1", title: "Laksa add-on topping", subtitle: "Choose one", discountLabel: "FREE", terms: "Egg / tofu / fish cake. One per bowl." },
+      { id: "atas-2", title: "Lunch set discount", subtitle: "Weekdays 12:00–15:00", discountLabel: "HK$10 OFF", terms: "Minimum spend HK$80." },
+    ],
+  },
+  {
+    id: "thai-simple-kitchen",
+    restaurantId: "thai-simple-kitchen",
+    name: "Thai Simple Membership",
+    image: "/images/membership/thaiSimple_membership.png",
+    tier: "Gold",
+    theme: "orange",
+    offers: [
+      { id: "tsk-1", title: "Basil pork rice promo", subtitle: "Weekday takeaway", discountLabel: "HK$8 OFF", terms: "One per order." },
+      { id: "tsk-2", title: "Free extra fried egg", subtitle: "With any rice bowl", discountLabel: "FREE", terms: "Dine-in only." },
+    ],
+  },
+];
+
 export const user: User = {
   id: "user-opensesame",
   name: "OpenSesame User",
   avatar: "/images/avatar-1.jpg",
   reputationScore: 91,
-  verifiedRatioPct: 88,
   diningRankLabel: "Trust Curator Lv.7",
   preferences: {
     cuisines: ["Italian", "Thai", "Cafe", "Spanish"],
@@ -464,6 +556,7 @@ export const user: User = {
   },
   savedRestaurantIds: ["mano-the-l-square", "casamigos", "milu-thai"],
   visitedRestaurantIds: ["umi-cwb", "atas", "thai-simple-kitchen"],
+  membershipCardIds: ["umi-cwb", "casamigos", "mano-the-l-square"],
 };
 
 export const bookings: Booking[] = [
@@ -803,6 +896,182 @@ export const reviews: Review[] = [
     tags: ["thai", "queue", "quick"],
     userName: "SnackSeeker",
     userAvatar: "/images/avatar-3.jpg",
+  },
+  {
+    id: "rv-11",
+    userId: "user-brunch-hunter",
+    restaurantId: "umi-cwb",
+    relatedType: "VISIT",
+    relatedId: "vs-9006",
+    createdAt: "2026-02-25T10:20:00.000Z",
+    agreeCount: 26,
+    disagreeCount: 4,
+    ratings: { food: 4, service: 4, atmosphere: 4 },
+    text: "Strong coffee and comfortable seating. Easy brunch option with consistent quality.",
+    photos: ["/images/food/breakfast.jpg"],
+    verifiedVisit: true,
+    verificationMethod: "AUTO",
+    txHash: null,
+    userReputationScore: 88,
+    helpedDecisions: 52,
+    aiCitations: 8,
+    tags: ["brunch", "coffee", "casual"],
+    userName: "BrunchHunter",
+    userAvatar: "/images/avatar-1.jpg",
+  },
+  {
+    id: "rv-12",
+    userId: "user-pasta-club",
+    restaurantId: "mano-the-l-square",
+    relatedType: "BOOKING",
+    relatedId: "bk-1001",
+    createdAt: "2026-02-26T13:00:00.000Z",
+    agreeCount: 33,
+    disagreeCount: 7,
+    ratings: { food: 5, service: 5, atmosphere: 4 },
+    text: "Truffle pasta is rich but balanced. Great date-night pacing and attentive staff.",
+    photos: ["/images/food/truffle_pasta.jpg"],
+    verifiedVisit: true,
+    verificationMethod: "QR",
+    txHash: "0x9a22..19ff",
+    userReputationScore: 93,
+    helpedDecisions: 76,
+    aiCitations: 12,
+    tags: ["italian", "date night", "signature"],
+    userName: "PastaClub",
+    userAvatar: "/images/avatar-2.jpg",
+  },
+  {
+    id: "rv-13",
+    userId: "user-laksa-diary",
+    restaurantId: "atas",
+    relatedType: "VISIT",
+    relatedId: "vs-9007",
+    createdAt: "2026-02-25T04:30:00.000Z",
+    agreeCount: 19,
+    disagreeCount: 3,
+    ratings: { food: 4, service: 4, atmosphere: 3 },
+    text: "Laksa broth is fragrant and not too heavy. Good value for weekday lunch.",
+    photos: ["/images/food/laksa.jpg"],
+    verifiedVisit: true,
+    verificationMethod: "AUTO",
+    txHash: null,
+    userReputationScore: 86,
+    helpedDecisions: 41,
+    aiCitations: 5,
+    tags: ["singaporean", "lunch", "value"],
+    userName: "LaksaDiary",
+    userAvatar: "/images/avatar-3.jpg",
+  },
+  {
+    id: "rv-14",
+    userId: "user-spice-meter",
+    restaurantId: "milu-thai",
+    relatedType: "TAKEAWAY",
+    relatedId: "od-2002",
+    createdAt: "2026-02-26T07:10:00.000Z",
+    agreeCount: 28,
+    disagreeCount: 6,
+    ratings: { food: 5, service: 4, atmosphere: 3 },
+    text: "Green curry and tom yum are both spicy enough and takeaway packaging is secure.",
+    photos: ["/images/food/green_curry.jpg"],
+    verifiedVisit: true,
+    verificationMethod: "AUTO",
+    txHash: null,
+    userReputationScore: 90,
+    helpedDecisions: 59,
+    aiCitations: 9,
+    tags: ["thai", "spicy", "takeaway"],
+    userName: "SpiceMeter",
+    userAvatar: "/images/avatar-1.jpg",
+  },
+  {
+    id: "rv-15",
+    userId: "user-tapas-notes",
+    restaurantId: "casamigos",
+    relatedType: "VISIT",
+    relatedId: "vs-9008",
+    createdAt: "2026-02-24T14:55:00.000Z",
+    agreeCount: 24,
+    disagreeCount: 4,
+    ratings: { food: 5, service: 4, atmosphere: 4 },
+    text: "Paella is great for sharing and garlic prawns are a safe order for groups.",
+    photos: ["/images/food/paella.jpg"],
+    verifiedVisit: true,
+    verificationMethod: "AUTO",
+    txHash: null,
+    userReputationScore: 89,
+    helpedDecisions: 63,
+    aiCitations: 8,
+    tags: ["tapas", "wine", "group"],
+    userName: "TapasNotes",
+    userAvatar: "/images/avatar-2.jpg",
+  },
+  {
+    id: "rv-16",
+    userId: "user-cwb-lunch-map",
+    restaurantId: "thai-simple-kitchen",
+    relatedType: "VISIT",
+    relatedId: "vs-9009",
+    createdAt: "2026-02-25T03:40:00.000Z",
+    agreeCount: 16,
+    disagreeCount: 2,
+    ratings: { food: 4, service: 4, atmosphere: 3 },
+    text: "Fast service and reliable basil pork rice. Good office-lunch option in CWB.",
+    photos: ["/images/food/basil_pork.jpg"],
+    verifiedVisit: true,
+    verificationMethod: "AUTO",
+    txHash: null,
+    userReputationScore: 85,
+    helpedDecisions: 33,
+    aiCitations: 4,
+    tags: ["thai", "quick", "office lunch"],
+    userName: "CWBLunchMap",
+    userAvatar: "/images/avatar-3.jpg",
+  },
+  {
+    id: "rv-17",
+    userId: "user-weekend-bites",
+    restaurantId: "umi-cwb",
+    relatedType: "TAKEAWAY",
+    relatedId: "od-2001",
+    createdAt: "2026-02-26T09:35:00.000Z",
+    agreeCount: 14,
+    disagreeCount: 3,
+    ratings: { food: 4, service: 4, atmosphere: 4 },
+    text: "Avocado toast and latte combo travels well. Great for a quick weekend pickup.",
+    photos: ["/images/food/avocado_toast.jpg"],
+    verifiedVisit: true,
+    verificationMethod: "AUTO",
+    txHash: null,
+    userReputationScore: 84,
+    helpedDecisions: 27,
+    aiCitations: 3,
+    tags: ["brunch", "takeaway", "coffee"],
+    userName: "WeekendBites",
+    userAvatar: "/images/avatar-1.jpg",
+  },
+  {
+    id: "rv-18",
+    userId: "user-curry-and-rice",
+    restaurantId: "atas",
+    relatedType: "TAKEAWAY",
+    relatedId: "od-2004",
+    createdAt: "2026-02-26T06:20:00.000Z",
+    agreeCount: 21,
+    disagreeCount: 5,
+    ratings: { food: 4, service: 4, atmosphere: 3 },
+    text: "Chicken rice is juicy and portion is stable. Easy and dependable takeaway.",
+    photos: ["/images/food/chicken_rice.jpg"],
+    verifiedVisit: true,
+    verificationMethod: "AUTO",
+    txHash: null,
+    userReputationScore: 87,
+    helpedDecisions: 46,
+    aiCitations: 6,
+    tags: ["chicken rice", "value", "quick"],
+    userName: "CurryAndRice",
+    userAvatar: "/images/avatar-2.jpg",
   },
 ];
 

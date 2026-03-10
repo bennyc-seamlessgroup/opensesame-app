@@ -7,7 +7,7 @@ import { SectionHeader } from "@/components/section-header";
 import { Button } from "@/components/ui/button";
 import { useAppState } from "@/lib/app-state";
 import { useI18n } from "@/lib/i18n";
-import { restaurants, user } from "@/lib/mock-data";
+import { user } from "@/lib/mock-data";
 
 type ReviewerSummary = {
   userId: string;
@@ -88,16 +88,10 @@ export function FoodiesClient() {
       return r.credibilityScore * 0.6 + agreeBoost + recencyBoost + followerBoost;
     };
 
-    const pickCover = (userId: string) => {
-      if (!restaurants.length) return "";
-      const idx = stableInt(`${userId}:cover`, 0, restaurants.length - 1);
-      return restaurants[idx]?.coverImage || restaurants[0]!.coverImage;
-    };
-
     return Array.from(byUser.values())
       .filter((r) => r.userId !== user.id)
       .sort((a, b) => score(b) - score(a))
-      .map((r) => ({ ...r, coverImage: pickCover(r.userId) }));
+      .slice(0, 60);
   }, [exploreReviews, social.followingUserIds]);
 
   return (
@@ -121,7 +115,6 @@ export function FoodiesClient() {
             avatar={foodie.avatar}
             credibilityScore={foodie.credibilityScore}
             followersCount={foodie.followersCount}
-            coverImage={foodie.coverImage}
           />
         ))}
       </div>
