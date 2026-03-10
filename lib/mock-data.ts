@@ -352,6 +352,10 @@ export const restaurants: Restaurant[] = [
       { id: "umi-0", name: "All Day Breakfast", image: "/images/food/breakfast.jpg", price: 128, tags: ["Brunch"], available: true },
       { id: "umi-1", name: "Breakfast Set", image: "/images/food/breakfast.jpg", price: 128, tags: ["Brunch"], available: true },
       { id: "umi-2", name: "Latte", image: "/images/food/avocado_toast.jpg", price: 38, tags: ["Coffee"], available: true },
+      { id: "umi-3", name: "Avocado Toast", image: "/images/food/avocado_toast.jpg", price: 86, tags: ["Healthy"], available: true },
+      { id: "umi-4", name: "Scrambled Eggs Toast", image: "/images/food/breakfast.jpg", price: 72, tags: ["Breakfast"], available: true },
+      { id: "umi-5", name: "Iced Black Coffee", image: "/images/food/avocado_toast.jpg", price: 30, tags: ["Coffee"], available: true },
+      { id: "umi-6", name: "Greek Yogurt Bowl", image: "/images/food/breakfast.jpg", price: 68, tags: ["Light"], available: true },
     ],
   },
   {
@@ -404,6 +408,10 @@ export const restaurants: Restaurant[] = [
       { id: "milu-0", name: "Tom Yum Soup", image: "/images/food/tomyum.jpg", price: 108, tags: ["Soup", "Spicy"], available: true },
       { id: "milu-1", name: "Pad Thai", image: "/images/food/tomyum_noodle.jpg", price: 98, tags: ["Noodles"], available: true },
       { id: "milu-2", name: "Green Curry", image: "/images/food/tomyum.jpg", price: 108, tags: ["Spicy"], available: true },
+      { id: "milu-3", name: "Thai Crab Omelette", image: "/images/food/crab_omelette.jpg", price: 138, tags: ["Signature"], available: true },
+      { id: "milu-4", name: "Mango Sticky Rice", image: "/images/food/laksa.jpg", price: 62, tags: ["Dessert"], available: true },
+      { id: "milu-5", name: "Thai Milk Tea", image: "/images/food/tomyum.jpg", price: 28, tags: ["Drink"], available: true },
+      { id: "milu-6", name: "Shrimp Cake", image: "/images/food/garlic_prawn.jpg", price: 76, tags: ["Side"], available: true },
     ],
   },
   {
@@ -431,6 +439,10 @@ export const restaurants: Restaurant[] = [
     takeawayMenu: [
       { id: "atas-1", name: "Laksa", image: "/images/food/laksa.jpg", price: 88, tags: ["Noodles"], available: true },
       { id: "atas-2", name: "Chicken Rice", image: "/images/food/chicken_rice.jpg", price: 92, tags: ["Rice"], available: true },
+      { id: "atas-3", name: "Kaya Toast Set", image: "/images/food/breakfast.jpg", price: 48, tags: ["Snack"], available: true },
+      { id: "atas-4", name: "Hainan Chicken Rice Set", image: "/images/food/chicken_rice.jpg", price: 118, tags: ["Set"], available: true },
+      { id: "atas-5", name: "Teh Tarik", image: "/images/food/laksa.jpg", price: 26, tags: ["Drink"], available: true },
+      { id: "atas-6", name: "Prawn Laksa", image: "/images/food/laksa.jpg", price: 102, tags: ["Seafood"], available: true },
     ],
   },
   {
@@ -458,6 +470,10 @@ export const restaurants: Restaurant[] = [
     takeawayMenu: [
       { id: "tsk-1", name: "Basil Pork Rice", image: "/images/food/basil_pork.jpg", price: 78, tags: ["Rice"], available: true },
       { id: "tsk-2", name: "Tom Yum Noodles", image: "/images/food/tomyum_noodle.jpg", price: 88, tags: ["Noodles"], available: true },
+      { id: "tsk-3", name: "Thai Fried Rice", image: "/images/food/chicken_rice.jpg", price: 82, tags: ["Rice"], available: true },
+      { id: "tsk-4", name: "Pad Kra Pao Egg", image: "/images/food/basil_pork.jpg", price: 84, tags: ["Top Seller"], available: true },
+      { id: "tsk-5", name: "Tom Yum Soup", image: "/images/food/tomyum.jpg", price: 72, tags: ["Soup"], available: true },
+      { id: "tsk-6", name: "Thai Iced Lemon Tea", image: "/images/food/tomyum.jpg", price: 24, tags: ["Drink"], available: true },
     ],
   },
 ];

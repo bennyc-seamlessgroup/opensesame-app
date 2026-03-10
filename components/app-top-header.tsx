@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search/search-bar";
 import { SearchQuickSheet } from "@/components/search/search-quick-sheet";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { user } from "@/lib/mock-data";
+import { useAppState } from "@/lib/app-state";
 import { HONG_KONG_LOCATION_OPTIONS } from "@/lib/hk-locations";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -20,6 +20,7 @@ import {
 
 export function AppTopHeader() {
   const { t, tx } = useI18n();
+  const { preferences } = useAppState();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,7 +28,7 @@ export function AppTopHeader() {
   const isExplorePage = pathname === "/explore";
   const isRootTabPage = pathname === "/orders" || pathname === "/wallet" || pathname === "/profile" || pathname === "/";
   const isInnerPage = !isAiPage && !isExplorePage && !isRootTabPage;
-  const currentLocation = user.preferences.areas[0] || "Current Location";
+  const currentLocation = preferences.areas[0] || "Current Location";
   const [aiFilters, setAiFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS);
   const [aiSheetOpen, setAiSheetOpen] = useState(false);
   const [exploreFilters, setExploreFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS);
@@ -75,10 +76,10 @@ export function AppTopHeader() {
 
   const exploreAreaOptions = useMemo(() => {
     const set = new Set<string>(HONG_KONG_LOCATION_OPTIONS);
-    for (const area of user.preferences.areas) if (area) set.add(area);
+    for (const area of preferences.areas) if (area) set.add(area);
     if (currentLocation) set.add(currentLocation);
     return Array.from(set);
-  }, [currentLocation]);
+  }, [currentLocation, preferences.areas]);
 
   const pushExplore = (nextFilters: SearchFilters) => {
     const params = toSearchParams(nextFilters);
@@ -92,15 +93,15 @@ export function AppTopHeader() {
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       <div className="mx-auto flex w-full max-w-[480px] items-center justify-between">
         {isAiPage ? (
-          <div className="flex w-full items-center gap-2">
-            <p className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold tracking-tight text-foreground">
+          <div className="flex w-full min-w-0 items-center gap-2">
+            <p className="inline-flex min-w-0 max-w-[112px] shrink items-center gap-1.5 text-sm font-semibold tracking-tight text-foreground sm:max-w-[132px]">
               <MapPin className="h-4 w-4" />
-              <span>{currentLocation}</span>
+              <span className="truncate">{tx(currentLocation)}</span>
             </p>
             <SearchBar
               text={aiSearchText}
               onClick={() => setAiSheetOpen(true)}
-              className="h-9 flex-1 border-border/80 px-3 shadow-none"
+              className="h-9 min-w-0 flex-1 border-border/80 px-3 shadow-none"
             />
             <SearchQuickSheet
               open={aiSheetOpen}
@@ -116,7 +117,7 @@ export function AppTopHeader() {
             />
           </div>
         ) : isExplorePage ? (
-          <div className="flex w-full items-center gap-2">
+          <div className="flex w-full min-w-0 items-center gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -133,7 +134,7 @@ export function AppTopHeader() {
               text={exploreSearchText}
               placeholder={t("restaurant_food_address")}
               onClick={() => setExploreSheetOpen(true)}
-              className="h-9 flex-1 border-border/80 px-3 shadow-none"
+              className="h-9 min-w-0 flex-1 border-border/80 px-3 shadow-none"
             />
 
             <Button

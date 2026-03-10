@@ -52,11 +52,6 @@ export function RestaurantRankingClient() {
       <SectionHeader
         title="餐廳排行榜"
         subtitle="Demo ranking"
-        action={
-          <Button asChild variant="secondary" size="sm" className="h-8 rounded-lg">
-            <Link href="/explore">Back</Link>
-          </Button>
-        }
       />
 
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -118,4 +113,3 @@ export function RestaurantRankingClient() {
     </div>
   );
 }
-

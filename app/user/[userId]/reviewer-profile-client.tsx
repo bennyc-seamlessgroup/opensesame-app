@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Medal, Search, ShieldCheck, UserPlus } from "lucide-react";
+import { Medal, Search, ShieldCheck, UserPlus } from "lucide-react";
 import { ReviewPostCard } from "@/components/review-post-card";
 import { SectionHeader } from "@/components/section-header";
 import { Badge } from "@/components/ui/badge";
@@ -184,12 +184,7 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
             className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-background/95" />
-          <div className="absolute left-3 right-3 top-3 flex items-center justify-between">
-            <Button asChild size="icon" variant="secondary" className="h-8 w-8 rounded-full">
-              <Link href="/explore">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
+          <div className="absolute right-3 top-3 flex items-center justify-end">
             <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full">
               <Search className="h-4 w-4" />
             </Button>
@@ -219,7 +214,7 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
 
           <div className="mt-2 space-y-2">
             <div className="flex items-center gap-1.5">
-              <p className="text-2xl font-semibold text-foreground">{profile.username}</p>
+              <p className="text-xl font-semibold text-foreground sm:text-2xl">{profile.username}</p>
               <ShieldCheck className="h-4 w-4 text-sky-500" />
             </div>
             <div className="flex flex-wrap items-center gap-1.5">

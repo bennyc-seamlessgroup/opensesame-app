@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { ExploreRestaurantCard } from "@/components/explore-restaurant-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,17 +14,7 @@ export default function ProfileSavedRestaurantsPage() {
 
   return (
     <div className="space-y-4 pb-4">
-      <div className="flex items-center gap-3">
-        <Button asChild size="icon" variant="secondary" className="h-9 w-9 rounded-full">
-          <Link href="/profile">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <p className="text-lg font-semibold text-foreground">{tx("Saved Restaurants")}</p>
-          <p className="text-xs text-muted-foreground">{tx("Your restaurant shortlist")}</p>
-        </div>
-      </div>
+      <SectionHeader title={tx("Saved Restaurants")} subtitle={tx("Your restaurant shortlist")} />
 
       {savedRestaurants.length ? (
         <div className="space-y-3">

@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 import { TopFoodieCard } from "@/components/top-foodie-card";
 import { SectionHeader } from "@/components/section-header";
-import { Button } from "@/components/ui/button";
 import { useAppState } from "@/lib/app-state";
 import { useI18n } from "@/lib/i18n";
 import { user } from "@/lib/mock-data";
@@ -99,11 +97,6 @@ export function FoodiesClient() {
       <SectionHeader
         title="達人用戶"
         subtitle={tx("發掘更多 Foodie（demo）")}
-        action={
-          <Button asChild variant="secondary" size="sm" className="h-8 rounded-lg">
-            <Link href="/explore">{tx("Back")}</Link>
-          </Button>
-        }
       />
 
       <div className="grid grid-cols-1 gap-3">

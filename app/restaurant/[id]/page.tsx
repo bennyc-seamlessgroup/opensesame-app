@@ -59,6 +59,7 @@ export default function RestaurantDetailPage() {
       }, 0),
     [cart, restaurant.takeawayMenu]
   );
+  const [bookingDate, bookingTime = "19:00"] = datetime.split("T");
 
   return (
     <div className={cn("space-y-4 pb-24", mode === "takeaway" ? "theme-takeaway" : "")}>
@@ -114,9 +115,27 @@ export default function RestaurantDetailPage() {
         <Card>
           <CardContent className="space-y-3 p-4">
             <SectionHeader title={tx("訂枱")} />
-            <div className="space-y-1">
-              <Label htmlFor="booking-datetime">{tx("日期 / 時間")}</Label>
-              <Input id="booking-datetime" type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="booking-date">{tx("Date")}</Label>
+                <Input
+                  id="booking-date"
+                  type="date"
+                  className="w-full min-w-0"
+                  value={bookingDate}
+                  onChange={(e) => setDatetime(`${e.target.value}T${bookingTime}`)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="booking-time">{tx("Time")}</Label>
+                <Input
+                  id="booking-time"
+                  type="time"
+                  className="w-full min-w-0"
+                  value={bookingTime}
+                  onChange={(e) => setDatetime(`${bookingDate}T${e.target.value}`)}
+                />
+              </div>
             </div>
             <div className="space-y-1">
               <Label>{tx("人數")}</Label>

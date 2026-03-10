@@ -30,10 +30,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="bg-muted/40 font-sans antialiased">
+      <body className="overflow-x-hidden bg-muted/40 font-sans antialiased">
         <AppStateProvider>
           <PwaRegister />
-          <div className="min-h-screen pb-24">
+          <div className="min-h-screen overflow-x-hidden pb-24">
             <Suspense
               fallback={
                 <div className="sticky top-0 z-40 h-14 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85" />
@@ -41,7 +41,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             >
               <AppTopHeader />
             </Suspense>
-            <main className="mx-auto w-full max-w-[480px] px-4 py-4">{children}</main>
+            <main className="mx-auto w-full max-w-[480px] overflow-x-hidden px-4 py-4">{children}</main>
             <BottomTabBar />
           </div>
         </AppStateProvider>

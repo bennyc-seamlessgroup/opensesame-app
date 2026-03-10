@@ -72,7 +72,7 @@ export default function FoodDetailPage() {
     }, 0);
   }, [takeawayCart, takeawayRestaurant]);
 
-  if (!intent) return <p className="text-sm text-muted-foreground">Food intent not found.</p>;
+  if (!intent) return <p className="text-sm text-muted-foreground">{tx("Food intent not found.")}</p>;
 
   return (
     <div className="space-y-4 pb-24">
@@ -109,7 +109,7 @@ export default function FoodDetailPage() {
               </div>
 
               <div className="rounded-2xl border border-border/80 p-3">
-                <p className="mb-3 text-sm font-semibold text-foreground">{tx("已選擇")}</p>
+                <p className="mb-3 text-sm font-semibold text-foreground">{tx("Selected item")}</p>
                 <div className="flex items-center gap-3">
                   <div className="relative h-16 w-16 overflow-hidden rounded-xl border border-border/70">
                     <Image src={selectedMenuItem.image} alt={selectedMenuItem.name} fill className="object-cover" sizes="64px" />
@@ -128,8 +128,8 @@ export default function FoodDetailPage() {
 
               {recommendedItems.length ? (
                 <div className="space-y-2 rounded-2xl border border-border/80 p-3">
-                  <p className="text-sm font-semibold text-foreground">{tx("多人分享建議")}</p>
-                  <p className="text-xs text-muted-foreground">{tx("幫家人／朋友加多兩三樣，同一間店一齊拎。")}</p>
+                  <p className="text-sm font-semibold text-foreground">{tx("Recommended with this dish")}</p>
+                  <p className="text-xs text-muted-foreground">{tx("Add drinks or extra dishes before checkout.")}</p>
                   <div className="space-y-2">
                     {recommendedItems.map((item) => {
                       const qty = takeawayCart[item.id] || 0;
@@ -176,7 +176,7 @@ export default function FoodDetailPage() {
           {options.map((restaurant) => (
             <RestaurantOptionCard key={restaurant.id} restaurant={restaurant} mode={mode} />
           ))}
-          {options.length === 0 ? <p className="text-sm text-muted-foreground">No options for this mode.</p> : null}
+          {options.length === 0 ? <p className="text-sm text-muted-foreground">{tx("No options for this mode.")}</p> : null}
         </section>
       )}
     </div>

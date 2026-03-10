@@ -50,11 +50,11 @@ export default function ProfilePage() {
               </Button>
               <div className="grid grid-cols-2 gap-3 text-right sm:gap-6">
                 <div>
-                  <p className="text-2xl font-semibold leading-none sm:text-3xl">{social.followingUserIds.length}</p>
+                  <p className="text-xl font-semibold leading-none sm:text-3xl">{social.followingUserIds.length}</p>
                   <p className="mt-1 text-xs text-white/75">{tx("Following")}</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold leading-none sm:text-3xl">{saved.length}</p>
+                  <p className="text-xl font-semibold leading-none sm:text-3xl">{saved.length}</p>
                   <p className="mt-1 text-xs text-white/75">{tx("Saved")}</p>
                 </div>
               </div>
@@ -62,12 +62,12 @@ export default function ProfilePage() {
 
             <div className="flex items-end justify-between gap-3">
               <div className="flex min-w-0 items-end gap-3">
-                <div className="relative h-20 w-20 overflow-hidden rounded-full border-4 border-white/90 bg-white/15 sm:h-24 sm:w-24">
+                <div className="relative h-[72px] w-[72px] overflow-hidden rounded-full border-4 border-white/90 bg-white/15 sm:h-24 sm:w-24">
                   <Image src={user.avatar} alt={user.name} fill className="object-cover" sizes="96px" />
                 </div>
                 <div className="min-w-0 pb-1">
-                  <p className="truncate text-2xl font-semibold sm:text-3xl">{user.name}</p>
-                  <p className="mt-1 text-xs text-white/80 sm:text-sm">{user.diningRankLabel}</p>
+                  <p className="truncate text-xl font-semibold sm:text-3xl">{user.name}</p>
+                  <p className="mt-1 text-[11px] text-white/80 sm:text-sm">{user.diningRankLabel}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <Badge className="border-0 bg-white/15 text-[11px] text-white hover:bg-white/15 sm:text-xs">
                       <ShieldCheck className="mr-1 h-3.5 w-3.5" />
@@ -97,7 +97,7 @@ export default function ProfilePage() {
 
       <Card className="rounded-[28px] border-border/70 bg-card shadow-sm">
         <CardContent className="grid grid-cols-2 gap-3 p-4">
-          <Link href={`/user/${user.id}`} className="rounded-2xl bg-secondary/70 p-4 text-center transition hover:bg-secondary">
+          <Link href={`/user/${user.id}`} className="rounded-2xl bg-secondary/70 p-4 text-center transition hover:bg-secondary active:scale-[0.99]">
             <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
               <span>{tx("Reviews")}</span>
               <span aria-hidden="true">›</span>

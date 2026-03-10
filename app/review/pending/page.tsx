@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { ShieldCheck, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SectionHeader } from "@/components/section-header";
@@ -136,9 +135,6 @@ export default function PendingResponsesPage() {
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{tx("你是否同意剛才推薦的評論？")}</span>
-                  <Button asChild variant="ghost" size="sm" className="h-8 rounded-lg px-2">
-                    <Link href="/ai">{tx("Back")}</Link>
-                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -43,7 +43,7 @@ export default function AiPage() {
   const [serviceMode, setServiceMode] = useState<"book" | "takeaway">("book");
   const selectedChips = useMemo(() => ["附近"], []);
   const [suggestionSeed, setSuggestionSeed] = useState(0);
-  const { bookings, orders, reviews, pendingVoteTasks, aiPreferences, addDislikedFoodIntent, removeDislikedFoodIntent } = useAppState();
+  const { bookings, orders, reviews, pendingVoteTasks, aiPreferences, addDislikedFoodIntent, removeDislikedFoodIntent, preferences } = useAppState();
   const [pendingBannerDismissed, setPendingBannerDismissed] = useState(false);
 
   const [dislikeOpen, setDislikeOpen] = useState(false);
@@ -98,9 +98,9 @@ export default function AiPage() {
     const scoreReview = (review: Review, primaryRestaurantId: string) => {
       const restaurant = restaurants.find((item) => item.id === review.restaurantId);
       const tagMatches = restaurant
-        ? user.preferences.cuisines.filter((cuisine) => restaurant.tags.includes(cuisine)).length
+        ? preferences.cuisines.filter((cuisine) => restaurant.tags.includes(cuisine)).length
         : 0;
-      const tasteSimilarity = clamp01(tagMatches / Math.max(1, user.preferences.cuisines.length));
+      const tasteSimilarity = clamp01(tagMatches / Math.max(1, preferences.cuisines.length));
 
       const totalVotes = Math.max(0, review.agreeCount) + Math.max(0, review.disagreeCount);
       const agreeRate = totalVotes > 0 ? clamp01(review.agreeCount / totalVotes) : 0.5;
@@ -140,7 +140,7 @@ export default function AiPage() {
       const globalPool = globalOthers.length > 0 ? globalOthers : verifiedPool;
       return fromPool(globalPool);
     };
-  }, [mergedReviewPool]);
+  }, [mergedReviewPool, preferences.cuisines]);
 
   const pendingCount = useMemo(
     () => (pendingVoteTasks || []).filter((task) => task.status === "PENDING").length,
@@ -198,7 +198,7 @@ export default function AiPage() {
       if (serviceMode === "book" && !primary.supportsBooking) return -Infinity;
       if (serviceMode === "takeaway" && !primary.supportsTakeaway) return -Infinity;
 
-      const cuisineMatches = user.preferences.cuisines.filter((cuisine) => primary.tags.includes(cuisine)).length;
+      const cuisineMatches = preferences.cuisines.filter((cuisine) => primary.tags.includes(cuisine)).length;
       const cuisineBoost = Math.min(12, cuisineMatches * 6);
       const recentBoost = recentSet.has(primary.id) ? 8 : 0;
       const review = restaurantReviewScore.get(primary.id);
@@ -237,15 +237,23 @@ export default function AiPage() {
       serviceMode === "book"
         ? (() => {
             const seen = new Set<string>();
-            const next: FoodIntent[] = [];
+            const uniqueRestaurants: FoodIntent[] = [];
             for (const intent of ranked) {
               const primary = resolvePrimaryRestaurant(intent);
               if (!primary) continue;
               if (seen.has(primary.id)) continue;
               seen.add(primary.id);
-              next.push(intent);
+              uniqueRestaurants.push(intent);
             }
-            return next;
+            if (uniqueRestaurants.length >= 3) return uniqueRestaurants;
+
+            const filled = [...uniqueRestaurants];
+            for (const intent of ranked) {
+              if (filled.some((item) => item.id === intent.id)) continue;
+              filled.push(intent);
+              if (filled.length >= 3) break;
+            }
+            return filled;
           })()
         : ranked;
 
@@ -265,7 +273,7 @@ export default function AiPage() {
         return { intent, restaurant: primary, review };
       })
       .filter((item): item is { intent: FoodIntent; restaurant: Restaurant; review: Review } => Boolean(item));
-  }, [aiPreferences.dislikedFoodIntents, bookings, orders, pickCommunityReview, selectedChips, serviceMode, suggestionSeed]);
+  }, [aiPreferences.dislikedFoodIntents, bookings, orders, pickCommunityReview, preferences.cuisines, selectedChips, serviceMode, suggestionSeed]);
 
   return (
     <div className={cn("space-y-4 pb-2", serviceMode === "takeaway" ? "theme-takeaway" : "")}>

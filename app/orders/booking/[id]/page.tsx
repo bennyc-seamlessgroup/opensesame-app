@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppState } from "@/lib/app-state";
+import { useI18n } from "@/lib/i18n";
 import { restaurants } from "@/lib/mock-data";
 import { formatDateTime } from "@/lib/utils";
 
@@ -22,7 +23,13 @@ function toDateTimeLocalValue(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function splitDateTimeLocal(value: string) {
+  const [date = "", time = "19:00"] = value.split("T");
+  return { date, time };
+}
+
 export default function BookingDetailPage() {
+  const { tx } = useI18n();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { bookings, reviews, updateBooking, cancelBooking, completeBooking } = useAppState();
@@ -37,7 +44,7 @@ export default function BookingDetailPage() {
 
   const alreadyReviewed = useMemo(() => Boolean(booking && reviews.some((review) => review.relatedType === "BOOKING" && review.relatedId === booking.id)), [booking, reviews]);
 
-  if (!booking || !restaurant) return <p className="text-sm text-muted-foreground">Booking not found.</p>;
+  if (!booking || !restaurant) return <p className="text-sm text-muted-foreground">{tx("Booking not found.")}</p>;
 
   const bookingTime = +new Date(booking.datetime);
   const canModify = booking.status === "CONFIRMED" && Number.isFinite(bookingTime) && bookingTime - Date.now() > 30 * 60 * 1000;
@@ -46,16 +53,16 @@ export default function BookingDetailPage() {
   const canWriteReview = booking.status === "COMPLETED" && !alreadyReviewed;
 
   const helperText = canPay
-    ? "Pay deposit to secure your table."
+    ? tx("Pay deposit to secure your table.")
     : booking.status === "CONFIRMED"
-      ? "Your table is secured. Just arrive on time."
+      ? tx("Your table is secured. Just arrive on time.")
       : booking.status === "COMPLETED"
-        ? "Visit completed. You can leave a review anytime."
-        : "This booking has been cancelled.";
+        ? tx("Visit completed. You can leave a review anytime.")
+        : tx("This booking has been cancelled.");
 
   return (
     <div className="space-y-4 pb-24">
-      <SectionHeader title="Booking" subtitle="Clear reservation details" />
+      <SectionHeader title={tx("Booking")} subtitle={tx("Clear reservation details")} />
 
       <Card className="border-border/80">
         <CardContent className="space-y-4 p-4">
@@ -81,16 +88,16 @@ export default function BookingDetailPage() {
 
           <div className="grid gap-3 rounded-2xl border border-border/80 p-3 text-sm sm:grid-cols-2">
             <div>
-              <p className="text-xs text-muted-foreground">Time</p>
+              <p className="text-xs text-muted-foreground">{tx("Time")}</p>
               <p className="mt-1 font-medium text-foreground">{formatDateTime(booking.datetime)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Party size</p>
+              <p className="text-xs text-muted-foreground">{tx("Party size")}</p>
               <p className="mt-1 font-medium text-foreground">{booking.partySize}</p>
             </div>
             {booking.notes ? (
               <div className="sm:col-span-2">
-                <p className="text-xs text-muted-foreground">Notes</p>
+                <p className="text-xs text-muted-foreground">{tx("Notes")}</p>
                 <p className="mt-1 text-foreground">{booking.notes}</p>
               </div>
             ) : null}
@@ -98,12 +105,12 @@ export default function BookingDetailPage() {
 
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm" className="rounded-xl">
-              <Link href={`/restaurant/${restaurant.id}?mode=book`}>Restaurant</Link>
+              <Link href={`/restaurant/${restaurant.id}?mode=book`}>{tx("Restaurant")}</Link>
             </Button>
 
             {canPay ? (
               <Button asChild size="sm" className="rounded-xl">
-                <Link href={`/pay?context=booking&bookingId=${booking.id}`}>Pay deposit</Link>
+                <Link href={`/pay?context=booking&bookingId=${booking.id}`}>{tx("Pay deposit")}</Link>
               </Button>
             ) : null}
 
@@ -117,13 +124,13 @@ export default function BookingDetailPage() {
                   router.refresh();
                 }}
               >
-                Mark visited
+                {tx("Mark visited")}
               </Button>
             ) : null}
 
             {canWriteReview ? (
               <Button asChild size="sm" variant="secondary" className="rounded-xl">
-                <Link href={`/review/new?restaurantId=${booking.restaurantId}&relatedType=BOOKING&relatedId=${booking.id}`}>Write review</Link>
+                <Link href={`/review/new?restaurantId=${booking.restaurantId}&relatedType=BOOKING&relatedId=${booking.id}`}>{tx("Write review")}</Link>
               </Button>
             ) : null}
           </div>
@@ -141,7 +148,7 @@ export default function BookingDetailPage() {
                 setEditOpen(true);
               }}
             >
-              Edit
+              {tx("Edit")}
             </Button>
             <Button
               size="sm"
@@ -150,19 +157,19 @@ export default function BookingDetailPage() {
               disabled={!canModify}
               onClick={() => cancelBooking(booking.id)}
             >
-              Cancel
+              {tx("Cancel")}
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            {canModify ? "You can edit or cancel up to 30 minutes before the reservation time." : "Edit and cancel are no longer available for this booking."}
+            {canModify ? tx("You can edit or cancel up to 30 minutes before the reservation time.") : tx("Edit and cancel are no longer available for this booking.")}
           </p>
         </CardContent>
       </Card>
 
       <Card className="border-border/80">
         <CardContent className="space-y-2 p-4">
-          <SectionHeader title="Restaurant note" />
+          <SectionHeader title={tx("Restaurant note")} />
           <p className="text-sm text-muted-foreground">{restaurant.bookingNotes}</p>
         </CardContent>
       </Card>
@@ -170,26 +177,44 @@ export default function BookingDetailPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit booking</DialogTitle>
+            <DialogTitle>{tx("Edit booking")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3">
-            <div className="space-y-1">
-              <Label htmlFor="edit-datetime">Date / time</Label>
-              <Input id="edit-datetime" type="datetime-local" value={editDatetime} onChange={(e) => setEditDatetime(e.target.value)} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-date">{tx("Date")}</Label>
+                <Input
+                  id="edit-date"
+                  type="date"
+                  className="w-full min-w-0"
+                  value={splitDateTimeLocal(editDatetime).date}
+                  onChange={(e) => setEditDatetime(`${e.target.value}T${splitDateTimeLocal(editDatetime).time}`)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="edit-time">{tx("Time")}</Label>
+                <Input
+                  id="edit-time"
+                  type="time"
+                  className="w-full min-w-0"
+                  value={splitDateTimeLocal(editDatetime).time}
+                  onChange={(e) => setEditDatetime(`${splitDateTimeLocal(editDatetime).date}T${e.target.value}`)}
+                />
+              </div>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="edit-party">Party size</Label>
+              <Label htmlFor="edit-party">{tx("Party size")}</Label>
               <Input id="edit-party" type="number" min={1} value={editPartySize} onChange={(e) => setEditPartySize(Number(e.target.value))} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="edit-notes">Notes</Label>
+              <Label htmlFor="edit-notes">{tx("Notes")}</Label>
               <Textarea id="edit-notes" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditOpen(false)}>Close</Button>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>{tx("Close")}</Button>
             <Button
               onClick={() => {
                 updateBooking(booking.id, {
@@ -200,7 +225,7 @@ export default function BookingDetailPage() {
                 setEditOpen(false);
               }}
             >
-              Save
+              {tx("Save")}
             </Button>
           </DialogFooter>
         </DialogContent>

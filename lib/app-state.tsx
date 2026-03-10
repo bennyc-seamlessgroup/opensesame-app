@@ -12,6 +12,7 @@ import {
   type QrPayload,
   type Review,
   type TakeawayOrder,
+  type User,
   type WalletTx,
 } from "@/lib/mock-data";
 import { getBookingDepositAmount } from "@/lib/payment";
@@ -74,11 +75,19 @@ type MembershipState = {
   activeCardId: string | null;
 };
 
+export type UserPreferencesState = User["preferences"] & {
+  spicePreference: "No spicy" | "Mild" | "Anything";
+  healthNotes: string[];
+  diningFor: "Solo" | "Couple" | "Family" | "Friends";
+};
+
 export type AppLocale = "en" | "zh-HK";
 
 type AppStateContextType = {
   locale: AppLocale;
   setLocale: (locale: AppLocale) => void;
+  preferences: UserPreferencesState;
+  updatePreferences: (patch: Partial<UserPreferencesState>) => void;
   wallet: WalletState;
   bookings: Booking[];
   orders: TakeawayOrder[];
@@ -150,6 +159,12 @@ type AppStateContextType = {
 
 const STORAGE_KEY = "opensesame-consumer-app-2-1";
 const LEGACY_STORAGE_KEY = "vira-consumer-app-2-1";
+const defaultPreferences: UserPreferencesState = {
+  ...user.preferences,
+  spicePreference: "Mild",
+  healthNotes: ["Low sodium"],
+  diningFor: "Couple",
+};
 
 const AppStateContext = createContext<AppStateContextType | null>(null);
 
@@ -174,6 +189,7 @@ const migrateReviewsWithUserId = (input: unknown): Review[] => {
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<AppLocale>("en");
+  const [preferences, setPreferences] = useState<UserPreferencesState>(defaultPreferences);
   const [wallet, setWallet] = useState<WalletState>(user.wallet);
   const [bookings, setBookings] = useState<Booking[]>(seedBookings);
   const [orders, setOrders] = useState<TakeawayOrder[]>(seedOrders);
@@ -209,6 +225,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     try {
       const data = JSON.parse(raw) as {
         locale?: AppLocale;
+        preferences?: Partial<UserPreferencesState>;
         wallet: WalletState;
         bookings: Booking[];
         orders: TakeawayOrder[];
@@ -221,6 +238,29 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         cartDraft: CartDraft;
       };
       setLocale(data.locale === "zh-HK" ? "zh-HK" : "en");
+      setPreferences({
+        ...defaultPreferences,
+        ...(data.preferences || {}),
+        cuisines: Array.isArray(data.preferences?.cuisines) ? data.preferences!.cuisines.filter((value) => typeof value === "string") : defaultPreferences.cuisines,
+        dietaryRestrictions: Array.isArray(data.preferences?.dietaryRestrictions)
+          ? data.preferences!.dietaryRestrictions.filter((value) => typeof value === "string")
+          : defaultPreferences.dietaryRestrictions,
+        areas: Array.isArray(data.preferences?.areas) ? data.preferences!.areas.filter((value) => typeof value === "string") : defaultPreferences.areas,
+        healthNotes: Array.isArray(data.preferences?.healthNotes)
+          ? data.preferences!.healthNotes.filter((value) => typeof value === "string")
+          : defaultPreferences.healthNotes,
+        spicePreference:
+          data.preferences?.spicePreference === "No spicy" || data.preferences?.spicePreference === "Anything"
+            ? data.preferences.spicePreference
+            : defaultPreferences.spicePreference,
+        diningFor:
+          data.preferences?.diningFor === "Solo" ||
+          data.preferences?.diningFor === "Couple" ||
+          data.preferences?.diningFor === "Family" ||
+          data.preferences?.diningFor === "Friends"
+            ? data.preferences.diningFor
+            : defaultPreferences.diningFor,
+      });
       setWallet(data.wallet || user.wallet);
       setBookings(data.bookings || seedBookings);
       setOrders(data.orders || seedOrders);
@@ -281,9 +321,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!isHydrated) return;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ locale, wallet, bookings, orders, transactions, reviews, aiPreferences, social, membership, bookingDraft, cartDraft })
+      JSON.stringify({ locale, preferences, wallet, bookings, orders, transactions, reviews, aiPreferences, social, membership, bookingDraft, cartDraft })
     );
-  }, [locale, wallet, bookings, orders, transactions, reviews, aiPreferences, social, membership, bookingDraft, cartDraft, isHydrated]);
+  }, [locale, preferences, wallet, bookings, orders, transactions, reviews, aiPreferences, social, membership, bookingDraft, cartDraft, isHydrated]);
+
+  const updatePreferences = (patch: Partial<UserPreferencesState>) => {
+    setPreferences((prev) => ({ ...prev, ...patch }));
+  };
 
   const setBookingDraft = (draft: BookingDraft) => setBookingDraftState(draft);
   const clearBookingDraft = () => setBookingDraftState(null);
@@ -358,8 +402,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return hash;
     };
 
-    const tagMatches = user.preferences.cuisines.filter((cuisine) => restaurant.tags.includes(cuisine)).length;
-    const tasteSimilarity = clamp01(tagMatches / Math.max(1, user.preferences.cuisines.length));
+    const tagMatches = preferences.cuisines.filter((cuisine) => restaurant.tags.includes(cuisine)).length;
+    const tasteSimilarity = clamp01(tagMatches / Math.max(1, preferences.cuisines.length));
 
     const scoreReview = (review: Review) => {
       const totalVotes = Math.max(0, review.agreeCount) + Math.max(0, review.disagreeCount);
@@ -1048,6 +1092,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     () => ({
       locale,
       setLocale,
+      preferences,
+      updatePreferences,
       wallet,
       bookings,
       orders,
@@ -1094,6 +1140,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }),
     [
       locale,
+      preferences,
+      updatePreferences,
       wallet,
       bookings,
       orders,
