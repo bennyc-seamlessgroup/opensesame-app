@@ -44,8 +44,8 @@ export function RestaurantOptionCard({ restaurant, mode }: RestaurantOptionCardP
               {mode === "book" ? (
                 <Badge variant="secondary" className="text-[10px]">{tx("人均")} {formatPerPersonRange(restaurant.avgSpend)}</Badge>
               ) : null}
-              <Badge variant="secondary" className="text-[10px]">{restaurant.trustVerifiedPct}% Verified</Badge>
-              <Badge variant="secondary" className="text-[10px]">{restaurant.rewardYieldPct}% back</Badge>
+              <Badge variant="secondary" className="text-[10px]">{restaurant.trustVerifiedPct}% {tx("Verified")}</Badge>
+              <Badge variant="secondary" className="text-[10px]">{restaurant.rewardYieldPct}% {tx("回贈")}</Badge>
               <Badge variant="outline" className="text-[10px]">{tx(restaurant.livePosSync ? "Live Sync" : "QR verify")}</Badge>
             </div>
           </div>

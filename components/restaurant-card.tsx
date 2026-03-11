@@ -44,7 +44,7 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
           <h3 className="text-base font-semibold text-foreground">{restaurant.name}</h3>
           <div className="flex flex-wrap gap-1.5">
             <Badge variant="secondary" className="text-[11px]">
-              {restaurant.trustVerifiedPct}% Verified
+              {restaurant.trustVerifiedPct}% {tx("Verified")}
             </Badge>
             <Badge variant="secondary" className="text-[11px]">
               {restaurant.aiMatchScore}% match
@@ -74,7 +74,7 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
 
         <div className="flex items-center gap-2">
           <Button asChild size="sm" className="h-8 flex-1 rounded-lg">
-            <Link href={`/restaurant/${restaurant.id}`}>View</Link>
+            <Link href={`/restaurant/${restaurant.id}`}>{tx("View")}</Link>
           </Button>
           <Button
             size="sm"
@@ -82,7 +82,7 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
             className="h-8 flex-1 rounded-lg"
             disabled={!restaurant.isBookableNow}
           >
-            Book
+            {tx("Book")}
           </Button>
         </div>
       </CardContent>

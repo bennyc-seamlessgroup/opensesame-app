@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/star-rating";
 import { SectionHeader } from "@/components/section-header";
 import { useAppState } from "@/lib/app-state";
+import { useI18n } from "@/lib/i18n";
 import { restaurants, reviewTags } from "@/lib/mock-data";
 
 type ReviewNewClientProps = {
@@ -21,6 +22,7 @@ type ReviewNewClientProps = {
 };
 
 export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetRelatedId }: ReviewNewClientProps) {
+  const { tx } = useI18n();
   const router = useRouter();
   const { bookings, orders, reviews, submitReviewWithReward } = useAppState();
 
@@ -28,10 +30,10 @@ export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetR
   const relatedOptions = [
     ...bookings
       .filter((booking) => booking.status === "COMPLETED" && booking.verificationStatus === "VERIFIED" && !existingRelated.has(booking.id))
-      .map((booking) => ({ label: `Booking ${booking.id}`, relatedType: "BOOKING" as const, relatedId: booking.id, restaurantId: booking.restaurantId })),
+      .map((booking) => ({ label: `BOOKING:${booking.id}`, relatedType: "BOOKING" as const, relatedId: booking.id, restaurantId: booking.restaurantId })),
     ...orders
       .filter((order) => order.status === "PICKED_UP" && order.verificationStatus === "VERIFIED" && !existingRelated.has(order.id))
-      .map((order) => ({ label: `Takeaway ${order.id}`, relatedType: "TAKEAWAY" as const, relatedId: order.id, restaurantId: order.restaurantId })),
+      .map((order) => ({ label: `TAKEAWAY:${order.id}`, relatedType: "TAKEAWAY" as const, relatedId: order.id, restaurantId: order.restaurantId })),
   ];
 
   const defaultOption = relatedOptions.find((option) => option.relatedId === presetRelatedId) || relatedOptions[0];
@@ -61,12 +63,12 @@ export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetR
 
   return (
     <div className="space-y-4 pb-8">
-      <SectionHeader title="Submit Review" subtitle="Verified review reward credit on submit" />
+      <SectionHeader title={tx("Submit Review")} subtitle={tx("Verified review reward credit on submit")} />
 
       <Card>
         <CardContent className="space-y-3 p-4">
           <div className="space-y-1">
-            <Label htmlFor="restaurant">Restaurant</Label>
+            <Label htmlFor="restaurant">{tx("Restaurant")}</Label>
             <select
               id="restaurant"
               value={restaurantId}
@@ -79,11 +81,11 @@ export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetR
                 </option>
               ))}
             </select>
-            <p className="text-xs text-muted-foreground">Selected: {selectedRestaurant?.name}</p>
+            <p className="text-xs text-muted-foreground">{tx("Selected")}: {selectedRestaurant?.name}</p>
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="related">Linked booking/order</Label>
+            <Label htmlFor="related">{tx("Linked booking/order")}</Label>
             <select
               id="related"
               value={`${relatedType}:${relatedId}`}
@@ -97,11 +99,11 @@ export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetR
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
               {relatedOptions.length === 0 ? (
-                <option value={`VISIT:${relatedId}`}>Manual Visit</option>
+                <option value={`VISIT:${relatedId}`}>{tx("Manual Visit")}</option>
               ) : (
                 relatedOptions.map((option) => (
                   <option key={option.relatedId} value={`${option.relatedType}:${option.relatedId}`}>
-                    {option.label}
+                    {option.label.startsWith("BOOKING:") ? `${tx("Booking")} ${option.relatedId}` : `${tx("Takeaway")} ${option.relatedId}`}
                   </option>
                 ))
               )}
@@ -109,48 +111,48 @@ export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetR
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="photos">Photos (mock upload)</Label>
+            <Label htmlFor="photos">{tx("Photos (mock upload)")}</Label>
             <Input
               id="photos"
               type="file"
               multiple
               onChange={(e) => setFilesCount(e.target.files?.length || 0)}
-              aria-label="Upload photos"
+              aria-label={tx("Upload photos")}
             />
-            <p className="text-xs text-muted-foreground">{filesCount} file(s) selected</p>
+            <p className="text-xs text-muted-foreground">{filesCount} {tx("file(s) selected")}</p>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Food</Label>
+              <Label>{tx("Food")}</Label>
               <StarRating value={ratingFood} onChange={setRatingFood} />
             </div>
             <div className="flex items-center justify-between">
-              <Label>Service</Label>
+              <Label>{tx("Service")}</Label>
               <StarRating value={ratingService} onChange={setRatingService} />
             </div>
             <div className="flex items-center justify-between">
-              <Label>Atmosphere</Label>
+              <Label>{tx("Atmosphere")}</Label>
               <StarRating value={ratingAtmosphere} onChange={setRatingAtmosphere} />
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="review-text">Review</Label>
+            <Label htmlFor="review-text">{tx("Review")}</Label>
             <Textarea
               id="review-text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Share what made this dining experience reliable"
+              placeholder={tx("Share what made this dining experience reliable")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Tags</Label>
+            <Label>{tx("Tags")}</Label>
             <div className="flex flex-wrap gap-2">
               {reviewTags.map((tag) => (
                 <button key={tag} type="button" onClick={() => toggleTag(tag)}>
-                  <Badge variant={selectedTags.includes(tag) ? "default" : "secondary"}>{tag}</Badge>
+                <Badge variant={selectedTags.includes(tag) ? "default" : "secondary"}>{tx(tag)}</Badge>
                 </button>
               ))}
             </div>
@@ -164,14 +166,14 @@ export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetR
                 relatedType,
                 relatedId,
                 ratings: { food: ratingFood, service: ratingService, atmosphere: ratingAtmosphere },
-                text: text || "Verified review submitted.",
+                text: text || tx("Verified review submitted."),
                 tags: selectedTags,
                 photos: [],
               });
               setOpenSuccess(true);
             }}
           >
-            Submit Review
+            {tx("Submit Review")}
           </Button>
         </CardContent>
       </Card>
@@ -179,13 +181,13 @@ export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetR
       <Dialog open={openSuccess} onOpenChange={setOpenSuccess}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Review Submitted</DialogTitle>
+            <DialogTitle>{tx("Review Submitted")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 text-sm">
-            <p className="font-medium text-foreground">Reward Breakdown</p>
-            <p className="text-foreground">Base: 5 $OSM</p>
-            <p className="text-muted-foreground">Future bonus: AI citation +2</p>
-            <p className="text-muted-foreground">Future bonus: 10+ saves +3</p>
+            <p className="font-medium text-foreground">{tx("Reward Breakdown")}</p>
+            <p className="text-foreground">{tx("Base")}: 5 $OSM</p>
+            <p className="text-muted-foreground">{tx("Future bonus: AI citation +2")}</p>
+            <p className="text-muted-foreground">{tx("Future bonus: 10+ saves +3")}</p>
           </div>
           <Button
             onClick={() => {
@@ -193,7 +195,7 @@ export function ReviewNewClient({ presetRestaurantId, presetRelatedType, presetR
               router.push("/wallet");
             }}
           >
-            View Wallet
+            {tx("View Wallet")}
           </Button>
         </DialogContent>
       </Dialog>

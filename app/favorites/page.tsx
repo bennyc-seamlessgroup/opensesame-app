@@ -82,8 +82,8 @@ export default function FavoritesPage() {
                       {tx(restaurant.area)} • {restaurant.distanceKm.toFixed(1)}km
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      <Badge variant="secondary" className="text-[10px]">{restaurant.trustVerifiedPct}% Verified</Badge>
-                      <Badge variant="secondary" className="text-[10px]">{restaurant.rewardYieldPct}% back</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{restaurant.trustVerifiedPct}% {tx("Verified")}</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{restaurant.rewardYieldPct}% {tx("回贈")}</Badge>
                     </div>
                   </div>
                   <Heart className="h-4 w-4 fill-current text-rose-500" />

@@ -162,7 +162,7 @@ export function AiFoodSuggestionCard({
                   className="h-auto p-0 text-xs text-muted-foreground"
                   onClick={() => setExpanded((prev) => !prev)}
                 >
-                  {expanded ? tx("收起") : "View more"}
+                  {expanded ? tx("收起") : tx("View more")}
                 </Button>
               ) : null}
             </div>

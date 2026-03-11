@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Heart, RefreshCcw, ShoppingBasket, X } from "lucide-react";
+import { Heart, PencilLine, RefreshCcw, ShoppingBasket, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AiFoodSuggestionCard } from "@/components/ai-food-suggestion-card";
 import { SectionHeader } from "@/components/section-header";
@@ -38,12 +38,24 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function AiPage() {
-  const { tx } = useI18n();
+  const { locale, tx } = useI18n();
   const router = useRouter();
   const [serviceMode, setServiceMode] = useState<"book" | "takeaway">("book");
   const selectedChips = useMemo(() => ["附近"], []);
   const [suggestionSeed, setSuggestionSeed] = useState(0);
-  const { bookings, orders, reviews, pendingVoteTasks, aiPreferences, addDislikedFoodIntent, removeDislikedFoodIntent, preferences } = useAppState();
+  const {
+    bookings,
+    orders,
+    reviews,
+    pendingVoteTasks,
+    aiPreferences,
+    addDislikedFoodIntent,
+    removeDislikedFoodIntent,
+    preferences,
+    respondPendingVote,
+    dismissPendingVoteTask,
+    dismissReviewPrompt,
+  } = useAppState();
   const [pendingBannerDismissed, setPendingBannerDismissed] = useState(false);
 
   const [dislikeOpen, setDislikeOpen] = useState(false);
@@ -145,6 +157,52 @@ export default function AiPage() {
   const pendingCount = useMemo(
     () => (pendingVoteTasks || []).filter((task) => task.status === "PENDING").length,
     [pendingVoteTasks]
+  );
+  const pendingBannerTitle = locale === "zh-HK" ? `你有 ${pendingCount} 則評論尚未回應` : `You have ${pendingCount} pending review responses`;
+  const pendingVoteTask = useMemo(
+    () => (pendingVoteTasks || []).find((task) => task.status === "PENDING") || null,
+    [pendingVoteTasks]
+  );
+  const pendingVoteReview = useMemo(
+    () => (pendingVoteTask ? mergedReviewPool.find((review) => review.id === pendingVoteTask.reviewId) || null : null),
+    [mergedReviewPool, pendingVoteTask]
+  );
+  const pendingVoteRestaurant = useMemo(
+    () => (pendingVoteTask ? restaurants.find((item) => item.id === pendingVoteTask.restaurantId) || null : null),
+    [pendingVoteTask]
+  );
+
+  const reviewPrompt = useMemo(() => {
+    const dismissed = new Set(aiPreferences.dismissedReviewPromptIds || []);
+    const reviewed = new Set(reviews.map((review) => review.relatedId));
+
+    for (const booking of bookings) {
+      if (booking.status !== "COMPLETED") continue;
+      if (dismissed.has(booking.id) || reviewed.has(booking.id)) continue;
+      return {
+        type: "BOOKING" as const,
+        relatedId: booking.id,
+        restaurantId: booking.restaurantId,
+        title: locale === "zh-HK" ? "寫下你的用餐評論，賺取 $OSM" : "Write your dining review to earn $OSM",
+      };
+    }
+
+    for (const order of orders) {
+      if (order.status !== "PICKED_UP") continue;
+      if (dismissed.has(order.id) || reviewed.has(order.id)) continue;
+      return {
+        type: "TAKEAWAY" as const,
+        relatedId: order.id,
+        restaurantId: order.restaurantId,
+        title: locale === "zh-HK" ? "寫下你的外賣評論，賺取 $OSM" : "Write your takeaway review to earn $OSM",
+      };
+    }
+
+    return null;
+  }, [aiPreferences.dismissedReviewPromptIds, bookings, locale, orders, reviews]);
+  const reviewPromptRestaurant = useMemo(
+    () => (reviewPrompt ? restaurants.find((item) => item.id === reviewPrompt.restaurantId) || null : null),
+    [reviewPrompt]
   );
 
   const personalizedSuggestions = useMemo(() => {
@@ -315,37 +373,106 @@ export default function AiPage() {
         </div>
       </section>
 
-      {!pendingBannerDismissed && pendingCount > 0 ? (
+      {!pendingBannerDismissed && pendingVoteTask && pendingVoteReview && pendingVoteRestaurant ? (
         <Card className="border-border/80 bg-gradient-to-r from-orange-500/10 via-background to-sky-500/10">
-          <CardContent className="p-3">
-            <div
-              role="button"
-              tabIndex={0}
-              className="flex items-center justify-between gap-3"
-              onClick={() => router.push("/review/pending")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") router.push("/review/pending");
-              }}
-              aria-label={`${tx("你有")} ${pendingCount} ${tx("則評論尚未回應")}`}
-            >
+          <CardContent className="space-y-3 p-3">
+            <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">{tx("你有")} {pendingCount} {tx("則評論尚未回應")}</p>
-                <p className="text-xs text-muted-foreground">{tx("每次回應")} +0.2 $OSM</p>
+                <p className="text-sm font-semibold text-foreground">{pendingBannerTitle}</p>
+                <p className="text-xs text-muted-foreground">
+                  {pendingVoteRestaurant.name} • {tx("每次回應")} +{pendingVoteTask.rewardForVote} $OSM
+                </p>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  className="rounded-md p-2 text-muted-foreground hover:bg-secondary"
-                  aria-label={tx("稍後")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPendingBannerDismissed(true);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+              <button
+                type="button"
+                className="rounded-md p-2 text-muted-foreground hover:bg-secondary"
+                aria-label={tx("稍後")}
+                onClick={() => setPendingBannerDismissed(true)}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="rounded-2xl border border-border/70 bg-card/80 p-3">
+              <p className="text-sm font-medium text-foreground">{pendingVoteReview.userName}</p>
+              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{pendingVoteReview.text}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                className="gap-2 rounded-xl"
+                onClick={() => {
+                  respondPendingVote(pendingVoteTask.id, "AGREE");
+                  toast({
+                    title: locale === "zh-HK" ? "已獲得 $OSM" : "You earned $OSM",
+                    description: (
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 animate-pulse text-orange-500" />
+                        <span>+{pendingVoteTask.rewardForVote} $OSM</span>
+                      </div>
+                    ),
+                  });
+                }}
+              >
+                <ThumbsUp className="h-4 w-4" />
+                {tx("同意")}
+              </Button>
+              <Button
+                variant="secondary"
+                className="gap-2 rounded-xl"
+                onClick={() => {
+                  respondPendingVote(pendingVoteTask.id, "DISAGREE");
+                  toast({
+                    title: locale === "zh-HK" ? "已獲得 $OSM" : "You earned $OSM",
+                    description: (
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 animate-pulse text-orange-500" />
+                        <span>+{pendingVoteTask.rewardForVote} $OSM</span>
+                      </div>
+                    ),
+                  });
+                }}
+              >
+                <ThumbsDown className="h-4 w-4" />
+                {tx("不同意")}
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-xl"
+                onClick={() => dismissPendingVoteTask(pendingVoteTask.id)}
+              >
+                {tx("稍後")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {reviewPrompt && reviewPromptRestaurant ? (
+        <Card className="border-border/80">
+          <CardContent className="space-y-3 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">{reviewPrompt.title}</p>
+                <p className="text-xs text-muted-foreground">{reviewPromptRestaurant.name} • +5 $OSM</p>
               </div>
+              <button
+                type="button"
+                className="rounded-md p-2 text-muted-foreground hover:bg-secondary"
+                aria-label={tx("稍後")}
+                onClick={() => dismissReviewPrompt(reviewPrompt.relatedId)}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button asChild className="rounded-xl gap-2">
+                <Link href={`/review/new?restaurantId=${reviewPrompt.restaurantId}&relatedType=${reviewPrompt.type}&relatedId=${reviewPrompt.relatedId}`}>
+                  <PencilLine className="h-4 w-4" />
+                  {tx("寫評論")}
+                </Link>
+              </Button>
+              <Button variant="secondary" className="rounded-xl" onClick={() => dismissReviewPrompt(reviewPrompt.relatedId)}>
+                {tx("稍後")}
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -407,7 +407,7 @@ export const restaurants: Restaurant[] = [
     takeawayMenu: [
       { id: "milu-0", name: "Tom Yum Soup", image: "/images/food/tomyum.jpg", price: 108, tags: ["Soup", "Spicy"], available: true },
       { id: "milu-1", name: "Pad Thai", image: "/images/food/tomyum_noodle.jpg", price: 98, tags: ["Noodles"], available: true },
-      { id: "milu-2", name: "Green Curry", image: "/images/food/tomyum.jpg", price: 108, tags: ["Spicy"], available: true },
+      { id: "milu-2", name: "Green Curry", image: "/images/food/green_curry.jpg", price: 108, tags: ["Spicy"], available: true },
       { id: "milu-3", name: "Thai Crab Omelette", image: "/images/food/crab_omelette.jpg", price: 138, tags: ["Signature"], available: true },
       { id: "milu-4", name: "Mango Sticky Rice", image: "/images/food/laksa.jpg", price: 62, tags: ["Dessert"], available: true },
       { id: "milu-5", name: "Thai Milk Tea", image: "/images/food/tomyum.jpg", price: 28, tags: ["Drink"], available: true },
@@ -581,7 +581,7 @@ export const membershipCards: MembershipCard[] = [
 
 export const user: User = {
   id: "user-opensesame",
-  name: "OpenSesame User",
+  name: "OEats User",
   avatar: "/images/avatar-1.jpg",
   reputationScore: 91,
   diningRankLabel: "Trust Curator Lv.7",
@@ -745,7 +745,7 @@ export const reviews: Review[] = [
     helpedDecisions: 94,
     aiCitations: 17,
     tags: ["group", "tapas", "timely"],
-    userName: "OpenSesame User",
+    userName: "OEats User",
     userAvatar: "/images/avatar-1.jpg",
   },
   {
@@ -1173,4 +1173,4 @@ export const reviewTags = [
   "Fast Seating",
 ];
 
-export const referralLink = "https://opensesame.app/r/opensesame-user-021";
+export const referralLink = "https://oeats.app/r/oeats-user-021";

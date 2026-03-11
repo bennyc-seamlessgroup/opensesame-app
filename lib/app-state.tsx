@@ -48,7 +48,7 @@ type PendingVoteTask = {
   reviewId: string;
   rewardForVote: number;
   createdAt: string;
-  status: "PENDING" | "RESPONDED";
+  status: "PENDING" | "RESPONDED" | "DISMISSED";
 };
 
 type AiPreferences = {
@@ -56,6 +56,7 @@ type AiPreferences = {
   dislikedFoodIntents: AiFoodDislike[];
   reviewVotes: Record<string, "AGREE" | "DISAGREE">;
   pendingVoteTasks: PendingVoteTask[];
+  dismissedReviewPromptIds: string[];
 };
 
 type TransactionVote = {
@@ -118,6 +119,8 @@ type AppStateContextType = {
   markOrderReady: (orderId: string) => void;
   markOrderPickedUp: (orderId: string) => void;
   respondPendingVote: (taskId: string, vote: "AGREE" | "DISAGREE") => void;
+  dismissPendingVoteTask: (taskId: string) => void;
+  dismissReviewPrompt: (relatedId: string) => void;
   toggleFollowUser: (userId: string) => void;
   toggleSavedReview: (reviewId: string) => void;
   hasCompletedTransaction: (restaurantId: string) => boolean;
@@ -201,6 +204,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     dislikedFoodIntents: [],
     reviewVotes: {},
     pendingVoteTasks: [],
+    dismissedReviewPromptIds: [],
   });
   const [social, setSocial] = useState<SocialState>({
     followingUserIds: [],
@@ -272,12 +276,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         dislikedFoodIntents: [],
         reviewVotes: {},
         pendingVoteTasks: [],
+        dismissedReviewPromptIds: [],
       };
       setAiPreferences({
         likedFoodIntentIds: nextAiPreferences.likedFoodIntentIds || [],
         dislikedFoodIntents: nextAiPreferences.dislikedFoodIntents || [],
         reviewVotes: nextAiPreferences.reviewVotes || {},
         pendingVoteTasks: nextAiPreferences.pendingVoteTasks || [],
+        dismissedReviewPromptIds: nextAiPreferences.dismissedReviewPromptIds || [],
       });
       const nextSocial = data.social || { followingUserIds: [], savedReviewIds: [], reviewVotes: {} };
       const migratedTransactionVotes: SocialState["transactionVotes"] = (() => {
@@ -745,6 +751,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const dismissPendingVoteTask = (taskId: string) => {
+    setAiPreferences((prev) => ({
+      ...prev,
+      pendingVoteTasks: (prev.pendingVoteTasks || []).map((item) =>
+        item.id === taskId ? { ...item, status: "DISMISSED" } : item
+      ),
+    }));
+  };
+
+  const dismissReviewPrompt = (relatedId: string) => {
+    setAiPreferences((prev) => {
+      if (prev.dismissedReviewPromptIds.includes(relatedId)) return prev;
+      return {
+        ...prev,
+        dismissedReviewPromptIds: [...prev.dismissedReviewPromptIds, relatedId],
+      };
+    });
+  };
+
   const addTx = (tx: WalletTx) => setTransactions((prev) => [tx, ...prev]);
 
   const confirmQrAction = (payload: QrPayload) => {
@@ -1129,6 +1154,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       markOrderReady,
       markOrderPickedUp,
       respondPendingVote,
+      dismissPendingVoteTask,
+      dismissReviewPrompt,
       toggleFollowUser,
       toggleSavedReview,
       voteOnReview,

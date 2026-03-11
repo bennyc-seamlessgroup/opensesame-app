@@ -62,7 +62,7 @@ export function ExploreRestaurantCard({ restaurant, mode, className }: ExploreRe
             </div>
             <div className="shrink-0 text-right">
               <Badge variant="secondary" className="text-[11px]">
-                {restaurant.trustVerifiedPct}% Verified
+                {restaurant.trustVerifiedPct}% {tx("Verified")}
               </Badge>
             </div>
           </div>

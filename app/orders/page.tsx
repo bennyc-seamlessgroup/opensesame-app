@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ClipboardList, CreditCard, PencilLine } from "lucide-react";
+import { ChevronRight, CreditCard, PencilLine } from "lucide-react";
 import { SectionHeader } from "@/components/section-header";
 import { PaymentPill, OrderStatusPill } from "@/components/status-pills";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,10 @@ export default function OrdersPage() {
   const { tx } = useI18n();
   const router = useRouter();
   const [segment, setSegment] = useState<"bookings" | "takeaway">("bookings");
-  const { bookings, orders, reviews } = useAppState();
+  const { bookings, orders, reviews, aiPreferences, dismissReviewPrompt } = useAppState();
 
   const reviewedIds = useMemo(() => new Set(reviews.map((review) => review.relatedId)), [reviews]);
+  const dismissedReviewPromptIds = useMemo(() => new Set(aiPreferences.dismissedReviewPromptIds || []), [aiPreferences.dismissedReviewPromptIds]);
 
   const sortedBookings = useMemo(() => {
     const now = Date.now();
@@ -57,8 +58,7 @@ export default function OrdersPage() {
     let upcoming = 0;
     let history = 0;
     for (const booking of bookings) {
-      const reviewable = booking.status === "COMPLETED" && !reviewedIds.has(booking.id);
-      const needsAction = (booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID") || reviewable;
+      const needsAction = booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID";
       const inHistory = booking.status === "CANCELLED" || booking.status === "COMPLETED";
       if (needsAction) action += 1;
       if (inHistory) history += 1;
@@ -72,8 +72,7 @@ export default function OrdersPage() {
     let inProgress = 0;
     let history = 0;
     for (const order of orders) {
-      const reviewable = order.status === "PICKED_UP" && !reviewedIds.has(order.id);
-      const needsAction = (order.status !== "CANCELLED" && order.paymentStatus === "UNPAID") || reviewable;
+      const needsAction = order.status !== "CANCELLED" && order.paymentStatus === "UNPAID";
       const inHistory = order.status === "CANCELLED" || order.status === "PICKED_UP";
       const isProgress = order.status === "PLACED" || order.status === "READY";
       if (needsAction) action += 1;
@@ -88,8 +87,7 @@ export default function OrdersPage() {
     const upcoming = [];
     const history = [];
     for (const booking of sortedBookings) {
-      const reviewable = booking.status === "COMPLETED" && !reviewedIds.has(booking.id);
-      const needsAction = (booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID") || reviewable;
+      const needsAction = booking.status === "CONFIRMED" && booking.paymentStatus === "UNPAID";
       const inHistory = booking.status === "CANCELLED" || booking.status === "COMPLETED";
       if (needsAction) actionRequired.push(booking);
       else if (inHistory) history.push(booking);
@@ -103,8 +101,7 @@ export default function OrdersPage() {
     const inProgress = [];
     const history = [];
     for (const order of sortedOrders) {
-      const reviewable = order.status === "PICKED_UP" && !reviewedIds.has(order.id);
-      const needsAction = (order.status !== "CANCELLED" && order.paymentStatus === "UNPAID") || reviewable;
+      const needsAction = order.status !== "CANCELLED" && order.paymentStatus === "UNPAID";
       const inHistory = order.status === "CANCELLED" || order.status === "PICKED_UP";
       const isProgress = order.status === "PLACED" || order.status === "READY";
       if (needsAction) actionRequired.push(order);
@@ -150,38 +147,27 @@ export default function OrdersPage() {
     return tx("訂單已取消。");
   };
 
+  const canPromptBookingReview = (booking: (typeof bookings)[number]) =>
+    booking.status === "COMPLETED" && !reviewedIds.has(booking.id) && !dismissedReviewPromptIds.has(booking.id);
+
+  const canPromptOrderReview = (order: (typeof orders)[number]) =>
+    order.status === "PICKED_UP" && !reviewedIds.has(order.id) && !dismissedReviewPromptIds.has(order.id);
+
   return (
     <div className="space-y-4 pb-2">
       <SectionHeader title="Orders" subtitle="Bookings & takeaway" />
-
-      <Card className="border-border/80">
-        <CardContent className="space-y-3 p-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">Overview</p>
-              <p className="text-xs text-muted-foreground">
-                {segment === "bookings" ? tx("訂枱付款、查看狀態、補寫評論。") : tx("查看付款、備餐進度與取餐記錄。")}
-              </p>
-            </div>
-          </div>
-
-          <Tabs value={segment} onValueChange={(v) => setSegment(v === "takeaway" ? "takeaway" : "bookings")} className="w-full">
-            <TabsList className="h-11 w-full rounded-full bg-muted p-1">
-              <TabsTrigger value="bookings" className="h-9 flex-1 rounded-full text-sm font-semibold data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                {tx("堂食訂枱")}
-                {bookingCounts.action > 0 ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[11px]">{bookingCounts.action}</span> : null}
-              </TabsTrigger>
-              <TabsTrigger value="takeaway" className="h-9 flex-1 rounded-full text-sm font-semibold data-[state=active]:bg-sky-500 data-[state=active]:text-white">
-                {tx("外賣")}
-                {takeawayCounts.action > 0 ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[11px]">{takeawayCounts.action}</span> : null}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <Tabs value={segment} onValueChange={(v) => setSegment(v === "takeaway" ? "takeaway" : "bookings")} className="w-full">
+        <TabsList className="h-11 w-full rounded-full bg-muted p-1">
+          <TabsTrigger value="bookings" className="h-9 flex-1 rounded-full text-sm font-semibold data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+            {tx("堂食訂枱")}
+            {bookingCounts.action > 0 ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[11px]">{bookingCounts.action}</span> : null}
+          </TabsTrigger>
+          <TabsTrigger value="takeaway" className="h-9 flex-1 rounded-full text-sm font-semibold data-[state=active]:bg-sky-500 data-[state=active]:text-white">
+            {tx("外賣")}
+            {takeawayCounts.action > 0 ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[11px]">{takeawayCounts.action}</span> : null}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {segment === "bookings" ? (
         <div className="space-y-3">
@@ -205,13 +191,10 @@ export default function OrdersPage() {
               <div className="space-y-3">
                 {bookingSections.actionRequired.map((booking) => {
                   const restaurant = restaurants.find((item) => item.id === booking.restaurantId);
-                  const reviewable = booking.status === "COMPLETED" && !reviewedIds.has(booking.id);
                   const primary =
                     booking.paymentStatus === "UNPAID"
                       ? { href: `/pay?context=booking&bookingId=${booking.id}`, label: tx("支付訂金"), Icon: CreditCard, variant: "default" as const }
-                      : reviewable
-                        ? { href: `/review/new?restaurantId=${booking.restaurantId}&relatedType=BOOKING&relatedId=${booking.id}`, label: tx("寫評論"), Icon: PencilLine, variant: "secondary" as const }
-                        : { href: `/orders/booking/${booking.id}`, label: tx("查看詳情"), Icon: CreditCard, variant: "outline" as const };
+                      : { href: `/orders/booking/${booking.id}`, label: tx("查看詳情"), Icon: CreditCard, variant: "outline" as const };
 
                   return (
                     <Card
@@ -228,7 +211,7 @@ export default function OrdersPage() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? tx("Restaurant")}</p>
                               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                             </div>
                             <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
@@ -272,7 +255,7 @@ export default function OrdersPage() {
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? tx("Restaurant")}</p>
                               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                             </div>
                             <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
@@ -311,7 +294,7 @@ export default function OrdersPage() {
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                                  <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? tx("Restaurant")}</p>
                                   <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                                 </div>
                                 <p className="text-xs text-muted-foreground">{formatDateTime(booking.datetime)} • {booking.partySize} {tx("位")}</p>
@@ -322,6 +305,22 @@ export default function OrdersPage() {
                               <OrderStatusPill status={booking.status} />
                               <PaymentPill status={booking.paymentStatus} />
                             </div>
+                            {canPromptBookingReview(booking) ? (
+                              <div className="mt-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                <Button asChild size="sm" variant="secondary" className="h-9 gap-2 rounded-xl">
+                                  <Link href={`/review/new?restaurantId=${booking.restaurantId}&relatedType=BOOKING&relatedId=${booking.id}`}>
+                                    <PencilLine className="h-4 w-4" />
+                                    {tx("寫評論")}
+                                  </Link>
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-9 rounded-xl" onClick={() => dismissReviewPrompt(booking.id)}>
+                                  {tx("稍後")}
+                                </Button>
+                                <span className="inline-flex h-9 items-center rounded-xl bg-secondary px-3 text-xs text-muted-foreground">
+                                  +5 $OSM
+                                </span>
+                              </div>
+                            ) : null}
                           </CardContent>
                         </Card>
                       );
@@ -354,13 +353,10 @@ export default function OrdersPage() {
               <div className="space-y-3">
                 {takeawaySections.actionRequired.map((order) => {
                   const restaurant = restaurants.find((item) => item.id === order.restaurantId);
-                  const reviewable = order.status === "PICKED_UP" && !reviewedIds.has(order.id);
                   const primary =
                     order.paymentStatus === "UNPAID"
                       ? { href: `/pay?context=order&orderId=${order.id}`, label: tx("立即付款"), Icon: CreditCard, variant: "default" as const }
-                      : reviewable
-                        ? { href: `/review/new?restaurantId=${order.restaurantId}&relatedType=TAKEAWAY&relatedId=${order.id}`, label: tx("寫評論"), Icon: PencilLine, variant: "secondary" as const }
-                        : { href: `/orders/takeaway/${order.id}`, label: tx("查看詳情"), Icon: CreditCard, variant: "outline" as const };
+                      : { href: `/orders/takeaway/${order.id}`, label: tx("查看詳情"), Icon: CreditCard, variant: "outline" as const };
 
                   return (
                     <Card
@@ -377,7 +373,7 @@ export default function OrdersPage() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? tx("Restaurant")}</p>
                               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -423,7 +419,7 @@ export default function OrdersPage() {
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                              <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? tx("Restaurant")}</p>
                               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -464,7 +460,7 @@ export default function OrdersPage() {
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? "Restaurant"}</p>
+                                  <p className="truncate text-sm font-semibold text-foreground">{restaurant?.name ?? tx("Restaurant")}</p>
                                   <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                                 </div>
                                 <p className="text-xs text-muted-foreground">
@@ -477,6 +473,22 @@ export default function OrdersPage() {
                               <OrderStatusPill status={order.status} />
                               <PaymentPill status={order.paymentStatus} />
                             </div>
+                            {canPromptOrderReview(order) ? (
+                              <div className="mt-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                <Button asChild size="sm" variant="secondary" className="h-9 gap-2 rounded-xl">
+                                  <Link href={`/review/new?restaurantId=${order.restaurantId}&relatedType=TAKEAWAY&relatedId=${order.id}`}>
+                                    <PencilLine className="h-4 w-4" />
+                                    {tx("寫評論")}
+                                  </Link>
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-9 rounded-xl" onClick={() => dismissReviewPrompt(order.id)}>
+                                  {tx("稍後")}
+                                </Button>
+                                <span className="inline-flex h-9 items-center rounded-xl bg-secondary px-3 text-xs text-muted-foreground">
+                                  +5 $OSM
+                                </span>
+                              </div>
+                            ) : null}
                           </CardContent>
                         </Card>
                       );

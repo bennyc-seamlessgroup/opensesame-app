@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type ModeSegmentedControlProps = {
@@ -8,6 +9,7 @@ type ModeSegmentedControlProps = {
 };
 
 export function ModeSegmentedControl({ value, onChange }: ModeSegmentedControlProps) {
+  const { tx } = useI18n();
   return (
     <div className="grid grid-cols-2 rounded-xl border border-border bg-card p-1">
       <button
@@ -18,7 +20,7 @@ export function ModeSegmentedControl({ value, onChange }: ModeSegmentedControlPr
           value === "book" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
         )}
       >
-        Book
+        {tx("Book")}
       </button>
       <button
         type="button"
@@ -28,7 +30,7 @@ export function ModeSegmentedControl({ value, onChange }: ModeSegmentedControlPr
           value === "takeaway" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
         )}
       >
-        Takeaway
+        {tx("Takeaway")}
       </button>
     </div>
   );

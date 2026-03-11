@@ -53,7 +53,7 @@ export function RestaurantLocationButton({
         }}
       >
         <MapPin className="h-4 w-4" />
-        {size !== "icon" ? <span>{label}</span> : null}
+        {size !== "icon" ? <span>{tx(label)}</span> : null}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

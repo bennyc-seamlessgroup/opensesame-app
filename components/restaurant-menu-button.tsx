@@ -68,14 +68,14 @@ export function RestaurantMenuButton({
         }}
       >
         <Menu className="h-4 w-4" />
-        <span>{label}</span>
+        <span>{tx(label)}</span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex flex-col gap-1">
-              <span className="text-base sm:text-lg">{restaurant.name} Menu</span>
+              <span className="text-base sm:text-lg">{restaurant.name} {tx("Menu")}</span>
               <span className="text-xs font-normal text-muted-foreground">
                 {tx(restaurant.area)} • {restaurant.distanceKm.toFixed(1)} km • {tx("更新")} {menuMeta?.lastUpdated ?? "—"}
               </span>

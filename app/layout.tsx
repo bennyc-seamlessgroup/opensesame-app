@@ -8,13 +8,13 @@ import { AppStateProvider } from "@/lib/app-state";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OpenSesame Consumer App 2.1",
+  title: "OEats Consumer App 2.1",
   description: "Food-first dining decisions, QR pay/verify, and reward-driven trust UX",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "OpenSesame",
+    title: "OEats",
     startupImage: [],
   },
 };

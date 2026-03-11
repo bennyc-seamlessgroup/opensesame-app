@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Bookmark, ChevronDown, ChevronLeft, MapPin, SlidersHorizontal } from "lucide-react";
+import { Bookmark, ChevronDown, ChevronLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search/search-bar";
 import { SearchQuickSheet } from "@/components/search/search-quick-sheet";
@@ -34,6 +34,11 @@ export function AppTopHeader() {
   const [exploreFilters, setExploreFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS);
   const [exploreSheetOpen, setExploreSheetOpen] = useState(false);
   const [exploreLocationOpen, setExploreLocationOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const exploreUrlFilters = useMemo(() => {
     return parseSearchFiltersFromParams(new URLSearchParams(searchParams.toString()));
@@ -73,6 +78,8 @@ export function AppTopHeader() {
   }, [aiFilters]);
 
   const exploreLocationLabel = exploreFilters.area || currentLocation;
+  const currentLocationText = mounted ? tx(currentLocation) : currentLocation;
+  const exploreLocationText = mounted ? tx(exploreLocationLabel) : exploreLocationLabel;
 
   const exploreAreaOptions = useMemo(() => {
     const set = new Set<string>(HONG_KONG_LOCATION_OPTIONS);
@@ -96,7 +103,7 @@ export function AppTopHeader() {
           <div className="flex w-full min-w-0 items-center gap-2">
             <p className="inline-flex min-w-0 max-w-[112px] shrink items-center gap-1.5 text-sm font-semibold tracking-tight text-foreground sm:max-w-[132px]">
               <MapPin className="h-4 w-4" />
-              <span className="truncate">{tx(currentLocation)}</span>
+              <span className="truncate" suppressHydrationWarning>{currentLocationText}</span>
             </p>
             <SearchBar
               text={aiSearchText}
@@ -126,7 +133,7 @@ export function AppTopHeader() {
               aria-label={t("select_location")}
             >
               <MapPin className="h-4 w-4" />
-              <span className="max-w-[88px] truncate">{exploreLocationLabel}</span>
+              <span className="max-w-[88px] truncate" suppressHydrationWarning>{exploreLocationText}</span>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
 
@@ -146,17 +153,6 @@ export function AppTopHeader() {
               aria-label={t("saved")}
             >
               <Bookmark className="h-4 w-4" />
-            </Button>
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              className="h-9 w-9 rounded-full"
-              onClick={() => setExploreSheetOpen(true)}
-              aria-label={t("filter")}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
             </Button>
 
             <SearchQuickSheet

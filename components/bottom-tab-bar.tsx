@@ -13,7 +13,7 @@ export function BottomTabBar() {
     { href: "/ai", label: "AI", subtitle: t("ai_subtitle"), icon: Sparkles },
     { href: "/explore", label: t("explore"), subtitle: "", icon: Compass },
     { href: "/orders", label: t("orders"), subtitle: "", icon: ClipboardList },
-    { href: "/wallet", label: t("wallet"), subtitle: "", icon: Wallet },
+    { href: "/wallet", label: "$OSM", subtitle: "", icon: Wallet },
     { href: "/profile", label: t("profile"), subtitle: "", icon: UserRound },
   ];
 

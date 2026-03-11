@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "OpenSesame",
-    short_name: "OpenSesame",
+    name: "OEats",
+    short_name: "OEats",
     description: "Food-first dining decisions, ordering, booking, and rewards.",
     start_url: "/ai",
     scope: "/",

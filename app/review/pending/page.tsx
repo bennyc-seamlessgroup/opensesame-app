@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ShieldCheck, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ShieldCheck, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SectionHeader } from "@/components/section-header";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +14,8 @@ import { restaurants } from "@/lib/mock-data";
 import { cn, formatDateTime, formatHKD } from "@/lib/utils";
 
 export default function PendingResponsesPage() {
-  const { tx } = useI18n();
-  const { pendingVoteTasks, bookings, orders, reviews, respondPendingVote } = useAppState();
+  const { locale, tx } = useI18n();
+  const { pendingVoteTasks, bookings, orders, reviews, respondPendingVote, dismissPendingVoteTask } = useAppState();
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
   const pending = useMemo(
@@ -36,7 +36,10 @@ export default function PendingResponsesPage() {
 
   return (
     <div className="space-y-4 pb-24">
-      <SectionHeader title="Pending Responses" subtitle={pending.length ? `You have ${pending.length} review(s) to respond` : "No pending votes"} />
+      <SectionHeader
+        title={locale === "zh-HK" ? "待回應評論" : "Pending Responses"}
+        subtitle={locale === "zh-HK" ? (pending.length ? `你有 ${pending.length} 則評論尚未回應` : "暫時未有待回應評論") : (pending.length ? `You have ${pending.length} review(s) to respond` : "No pending votes")}
+      />
 
       {pending.length === 0 ? (
         <Card className="border-dashed border-border/80">
@@ -114,7 +117,15 @@ export default function PendingResponsesPage() {
                     className="gap-2 rounded-lg"
                     onClick={() => {
                       respondPendingVote(task.id, "AGREE");
-                      toast({ title: tx("已回應：同意"), description: `${tx("獲得")} +${task.rewardForVote} $OSM` });
+                      toast({
+                        title: tx("已回應：同意"),
+                        description: (
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 animate-pulse text-orange-500" />
+                            <span>{tx("獲得")} +{task.rewardForVote} $OSM</span>
+                          </div>
+                        ),
+                      });
                     }}
                   >
                     <ThumbsUp className="h-4 w-4" />
@@ -125,7 +136,15 @@ export default function PendingResponsesPage() {
                     className="gap-2 rounded-lg"
                     onClick={() => {
                       respondPendingVote(task.id, "DISAGREE");
-                      toast({ title: tx("已回應：不同意"), description: `${tx("獲得")} +${task.rewardForVote} $OSM` });
+                      toast({
+                        title: tx("已回應：不同意"),
+                        description: (
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 animate-pulse text-orange-500" />
+                            <span>{tx("獲得")} +{task.rewardForVote} $OSM</span>
+                          </div>
+                        ),
+                      });
                     }}
                   >
                     <ThumbsDown className="h-4 w-4" />
@@ -135,6 +154,10 @@ export default function PendingResponsesPage() {
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{tx("你是否同意剛才推薦的評論？")}</span>
+                  <Button variant="ghost" size="sm" className="h-8 rounded-lg px-2" onClick={() => dismissPendingVoteTask(task.id)}>
+                    <X className="h-4 w-4" />
+                    {tx("稍後")}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
