@@ -323,12 +323,26 @@ export function ReviewerProfileClient({ userId }: { userId: string }) {
       ) : (
         <section className="space-y-2">
           <SectionHeader title={tx("Reviews")} subtitle={`${profile.totalReviews} ${tx("reviews")}`} />
-          <Tabs value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
-            <TabsList className="w-full">
-              <TabsTrigger className="flex-1" value="latest">{tx("Latest")}</TabsTrigger>
-              <TabsTrigger className="flex-1" value="agreed">{tx("Most agreed")}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={sortMode === "latest" ? "default" : "secondary"}
+              className="h-9 rounded-full px-4"
+              onClick={() => setSortMode("latest")}
+            >
+              {tx("Latest")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={sortMode === "agreed" ? "default" : "secondary"}
+              className="h-9 rounded-full px-4"
+              onClick={() => setSortMode("agreed")}
+            >
+              {tx("Most agreed")}
+            </Button>
+          </div>
           <div className="space-y-3">
             {sortedReviews.map((review) => (
               <ReviewPostCard key={review.id} review={review} />

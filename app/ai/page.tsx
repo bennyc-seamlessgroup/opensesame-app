@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Heart, PencilLine, RefreshCcw, ShoppingBasket, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Heart, PencilLine, RefreshCcw, ShoppingBasket, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AiFoodSuggestionCard } from "@/components/ai-food-suggestion-card";
 import { SectionHeader } from "@/components/section-header";
@@ -57,6 +57,7 @@ export default function AiPage() {
     dismissReviewPrompt,
   } = useAppState();
   const [pendingBannerDismissed, setPendingBannerDismissed] = useState(false);
+  const [pendingReviewCollapsed, setPendingReviewCollapsed] = useState(true);
 
   const [dislikeOpen, setDislikeOpen] = useState(false);
   const [dislikeIntent, setDislikeIntent] = useState<FoodIntent | null>(null);
@@ -204,6 +205,9 @@ export default function AiPage() {
     () => (reviewPrompt ? restaurants.find((item) => item.id === reviewPrompt.restaurantId) || null : null),
     [reviewPrompt]
   );
+  const pendingReviewCount = Number(
+    Boolean(!pendingBannerDismissed && pendingVoteTask && pendingVoteReview && pendingVoteRestaurant)
+  ) + Number(Boolean(reviewPrompt && reviewPromptRestaurant));
 
   const personalizedSuggestions = useMemo(() => {
     const dislikedSet = new Set(aiPreferences.dislikedFoodIntents.map((item) => item.intentId));
@@ -373,107 +377,146 @@ export default function AiPage() {
         </div>
       </section>
 
-      {!pendingBannerDismissed && pendingVoteTask && pendingVoteReview && pendingVoteRestaurant ? (
+      {pendingReviewCount > 0 ? (
         <Card className="border-border/80 bg-gradient-to-r from-orange-500/10 via-background to-sky-500/10">
           <CardContent className="space-y-3 p-3">
-            <div className="flex items-start justify-between gap-3">
+            <button
+              type="button"
+              className="flex w-full items-start justify-between gap-3 text-left"
+              onClick={() => setPendingReviewCollapsed((prev) => !prev)}
+              aria-expanded={!pendingReviewCollapsed}
+            >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">{pendingBannerTitle}</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {locale === "zh-HK" ? `待處理回應與評論 · ${pendingReviewCount}` : `Pending review tasks · ${pendingReviewCount}`}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {pendingVoteRestaurant.name} • {tx("每次回應")} +{pendingVoteTask.rewardForVote} $OSM
+                  {pendingReviewCollapsed
+                    ? [
+                        !pendingBannerDismissed && pendingVoteTask && pendingVoteRestaurant
+                          ? `${tx("評論回應")} · ${pendingVoteRestaurant.name}`
+                          : null,
+                        reviewPrompt && reviewPromptRestaurant
+                          ? `${tx("寫評論")} · ${reviewPromptRestaurant.name}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : tx("展開後可回應評論或撰寫評論以獲得 $OSM")}
                 </p>
               </div>
-              <button
-                type="button"
-                className="rounded-md p-2 text-muted-foreground hover:bg-secondary"
-                aria-label={tx("稍後")}
-                onClick={() => setPendingBannerDismissed(true)}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="rounded-2xl border border-border/70 bg-card/80 p-3">
-              <p className="text-sm font-medium text-foreground">{pendingVoteReview.userName}</p>
-              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{pendingVoteReview.text}</p>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                className="gap-2 rounded-xl"
-                onClick={() => {
-                  respondPendingVote(pendingVoteTask.id, "AGREE");
-                  toast({
-                    title: locale === "zh-HK" ? "已獲得 $OSM" : "You earned $OSM",
-                    description: (
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 animate-pulse text-orange-500" />
-                        <span>+{pendingVoteTask.rewardForVote} $OSM</span>
-                      </div>
-                    ),
-                  });
-                }}
-              >
-                <ThumbsUp className="h-4 w-4" />
-                {tx("同意")}
-              </Button>
-              <Button
-                variant="secondary"
-                className="gap-2 rounded-xl"
-                onClick={() => {
-                  respondPendingVote(pendingVoteTask.id, "DISAGREE");
-                  toast({
-                    title: locale === "zh-HK" ? "已獲得 $OSM" : "You earned $OSM",
-                    description: (
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 animate-pulse text-orange-500" />
-                        <span>+{pendingVoteTask.rewardForVote} $OSM</span>
-                      </div>
-                    ),
-                  });
-                }}
-              >
-                <ThumbsDown className="h-4 w-4" />
-                {tx("不同意")}
-              </Button>
-              <Button
-                variant="ghost"
-                className="rounded-xl"
-                onClick={() => dismissPendingVoteTask(pendingVoteTask.id)}
-              >
-                {tx("稍後")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {reviewPrompt && reviewPromptRestaurant ? (
-        <Card className="border-border/80">
-          <CardContent className="space-y-3 p-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">{reviewPrompt.title}</p>
-                <p className="text-xs text-muted-foreground">{reviewPromptRestaurant.name} • +5 $OSM</p>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-xs">
+                  {pendingReviewCount}
+                </Badge>
+                {pendingReviewCollapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
               </div>
-              <button
-                type="button"
-                className="rounded-md p-2 text-muted-foreground hover:bg-secondary"
-                aria-label={tx("稍後")}
-                onClick={() => dismissReviewPrompt(reviewPrompt.relatedId)}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button asChild className="rounded-xl gap-2">
-                <Link href={`/review/new?restaurantId=${reviewPrompt.restaurantId}&relatedType=${reviewPrompt.type}&relatedId=${reviewPrompt.relatedId}`}>
-                  <PencilLine className="h-4 w-4" />
-                  {tx("寫評論")}
-                </Link>
-              </Button>
-              <Button variant="secondary" className="rounded-xl" onClick={() => dismissReviewPrompt(reviewPrompt.relatedId)}>
-                {tx("稍後")}
-              </Button>
-            </div>
+            </button>
+
+            {!pendingReviewCollapsed ? (
+              <div className="space-y-3">
+                {!pendingBannerDismissed && pendingVoteTask && pendingVoteReview && pendingVoteRestaurant ? (
+                  <div className="space-y-3 rounded-2xl border border-border/70 bg-card/80 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{pendingBannerTitle}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {pendingVoteRestaurant.name} • {tx("每次回應")} +{pendingVoteTask.rewardForVote} $OSM
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded-md p-2 text-muted-foreground hover:bg-secondary"
+                        aria-label={tx("稍後")}
+                        onClick={() => setPendingBannerDismissed(true)}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="rounded-2xl border border-border/70 bg-background p-3">
+                      <p className="text-sm font-medium text-foreground">{pendingVoteReview.userName}</p>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{pendingVoteReview.text}</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button
+                        className="gap-2 rounded-xl"
+                        onClick={() => {
+                          respondPendingVote(pendingVoteTask.id, "AGREE");
+                          toast({
+                            title: locale === "zh-HK" ? "已獲得 $OSM" : "You earned $OSM",
+                            description: (
+                              <div className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 animate-pulse text-orange-500" />
+                                <span>+{pendingVoteTask.rewardForVote} $OSM</span>
+                              </div>
+                            ),
+                          });
+                        }}
+                      >
+                        <ThumbsUp className="h-4 w-4" />
+                        {tx("同意")}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="gap-2 rounded-xl"
+                        onClick={() => {
+                          respondPendingVote(pendingVoteTask.id, "DISAGREE");
+                          toast({
+                            title: locale === "zh-HK" ? "已獲得 $OSM" : "You earned $OSM",
+                            description: (
+                              <div className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 animate-pulse text-orange-500" />
+                                <span>+{pendingVoteTask.rewardForVote} $OSM</span>
+                              </div>
+                            ),
+                          });
+                        }}
+                      >
+                        <ThumbsDown className="h-4 w-4" />
+                        {tx("不同意")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="rounded-xl"
+                        onClick={() => dismissPendingVoteTask(pendingVoteTask.id)}
+                      >
+                        {tx("稍後")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {reviewPrompt && reviewPromptRestaurant ? (
+                  <div className="space-y-3 rounded-2xl border border-border/70 bg-card/80 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{reviewPrompt.title}</p>
+                        <p className="text-xs text-muted-foreground">{reviewPromptRestaurant.name} • +5 $OSM</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded-md p-2 text-muted-foreground hover:bg-secondary"
+                        aria-label={tx("稍後")}
+                        onClick={() => dismissReviewPrompt(reviewPrompt.relatedId)}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button asChild className="rounded-xl gap-2">
+                        <Link href={`/review/new?restaurantId=${reviewPrompt.restaurantId}&relatedType=${reviewPrompt.type}&relatedId=${reviewPrompt.relatedId}`}>
+                          <PencilLine className="h-4 w-4" />
+                          {tx("寫評論")}
+                        </Link>
+                      </Button>
+                      <Button variant="secondary" className="rounded-xl" onClick={() => dismissReviewPrompt(reviewPrompt.relatedId)}>
+                        {tx("稍後")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
