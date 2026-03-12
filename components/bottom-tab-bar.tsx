@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 export function BottomTabBar() {
   const pathname = usePathname();
   const { t } = useI18n();
+
+  if (pathname === "/ai/chat") return null;
+
   const tabs = [
     { href: "/ai", label: "AI", subtitle: t("ai_subtitle"), icon: Sparkles },
     { href: "/explore", label: t("explore"), subtitle: "", icon: Compass },

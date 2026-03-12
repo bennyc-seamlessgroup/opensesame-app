@@ -25,9 +25,10 @@ export function AppTopHeader() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAiPage = pathname === "/ai";
+  const isAiChatPage = pathname === "/ai/chat";
   const isExplorePage = pathname === "/explore";
   const isRootTabPage = pathname === "/orders" || pathname === "/wallet" || pathname === "/profile" || pathname === "/";
-  const isInnerPage = !isAiPage && !isExplorePage && !isRootTabPage;
+  const isInnerPage = !isAiPage && !isAiChatPage && !isExplorePage && !isRootTabPage;
   const currentLocation = preferences.areas[0] || "Current Location";
   const [aiFilters, setAiFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS);
   const [aiSheetOpen, setAiSheetOpen] = useState(false);
@@ -94,7 +95,7 @@ export function AppTopHeader() {
     router.push(suffix ? `/explore?${suffix}` : "/explore");
   };
 
-  if (isRootTabPage) return null;
+  if (isRootTabPage || isAiChatPage) return null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85">

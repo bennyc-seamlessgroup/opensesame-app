@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Heart, PencilLine, RefreshCcw, ShoppingBasket, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Heart, MessageCircleMore, PencilLine, RefreshCcw, ShoppingBasket, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AiFoodSuggestionCard } from "@/components/ai-food-suggestion-card";
 import { SectionHeader } from "@/components/section-header";
@@ -651,6 +651,16 @@ export default function AiPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Button
+        asChild
+        size="icon"
+        className="fixed bottom-24 right-4 z-50 h-14 w-14 rounded-full bg-orange-500 text-white shadow-[0_12px_30px_rgba(0,0,0,0.18)] hover:bg-orange-600 sm:right-[max(1rem,calc(50vw-220px))]"
+      >
+        <Link href="/ai/chat" aria-label={locale === "zh-HK" ? "打開 AI 聊天" : "Open AI chat"}>
+          <MessageCircleMore className="h-6 w-6" />
+        </Link>
+      </Button>
     </div>
   );
 }
