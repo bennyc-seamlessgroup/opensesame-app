@@ -193,7 +193,7 @@ export function AiChatClient() {
 
   return (
     <div className="-mx-4 -my-4 flex min-h-[calc(100dvh-2rem)] flex-col bg-background">
-      <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur">
+      <header className="fixed inset-x-0 top-0 z-40 mx-auto flex w-full max-w-[480px] items-center gap-3 border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur">
         <Button asChild type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-full">
           <Link href="/ai" aria-label={tx("Back")}>
             <ArrowLeft className="h-5 w-5" />
@@ -207,7 +207,7 @@ export function AiChatClient() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-3 py-4">
+      <main className="flex-1 overflow-y-auto px-3 pb-4 pt-[72px]">
         <div className="mx-auto flex w-full max-w-[640px] flex-col gap-3">
           {messages.map((message) => {
             const cards = (message.cards || []).slice(0, 3);
