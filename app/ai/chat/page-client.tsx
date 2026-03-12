@@ -28,9 +28,11 @@ type UiMessage = {
 type SpeechRecognitionLike = {
   lang: string;
   interimResults: boolean;
+  continuous?: boolean;
   maxAlternatives: number;
   onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
   onerror: (() => void) | null;
+  onend?: (() => void) | null;
   start: () => void;
   stop: () => void;
 };
@@ -51,8 +53,16 @@ export function AiChatClient() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [dictationHint, setDictationHint] = useState("");
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!dictationHint) return;
+    const timer = window.setTimeout(() => setDictationHint(""), 2200);
+    return () => window.clearTimeout(timer);
+  }, [dictationHint]);
 
   useEffect(() => {
     try {
@@ -132,6 +142,8 @@ export function AiChatClient() {
   };
 
   const handleMic = () => {
+    inputRef.current?.focus();
+
     const speechApi =
       typeof window !== "undefined"
         ? ((window as Window & {
@@ -141,26 +153,41 @@ export function AiChatClient() {
             (window as Window & { webkitSpeechRecognition?: new () => SpeechRecognitionLike }).webkitSpeechRecognition)
         : undefined;
 
-    if (!speechApi) return;
+    if (!speechApi) {
+      setDictationHint(locale === "zh-HK" ? "請點鍵盤上的咪高峰進行語音輸入" : "Tap the keyboard mic to dictate");
+      return;
+    }
 
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
+      setDictationHint(locale === "zh-HK" ? "已停止語音輸入" : "Stopped listening");
       return;
     }
 
     const recognition = new speechApi();
     recognition.lang = locale === "zh-HK" ? "zh-HK" : "en-US";
-    recognition.interimResults = false;
+    recognition.interimResults = true;
+    recognition.continuous = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript || "";
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i += 1) {
+        transcript += event.results[i]?.[0]?.transcript || "";
+      }
       setInput(transcript.trim());
-      setIsListening(false);
     };
-    recognition.onerror = () => setIsListening(false);
+    recognition.onerror = () => {
+      setIsListening(false);
+      setDictationHint(locale === "zh-HK" ? "語音輸入暫時不可用" : "Voice input is unavailable");
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      setDictationHint(locale === "zh-HK" ? "語音已轉成文字，可再修改後發送" : "Speech converted to text. Edit before sending.");
+    };
     recognitionRef.current = recognition;
     setIsListening(true);
+    setDictationHint(locale === "zh-HK" ? "請開始說話…" : "Listening…");
     recognition.start();
   };
 
@@ -263,6 +290,7 @@ export function AiChatClient() {
         <div className="mx-auto flex w-full max-w-[640px] items-center gap-2">
           <div className="relative flex-1">
             <Input
+              ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
@@ -274,6 +302,9 @@ export function AiChatClient() {
               placeholder={locale === "zh-HK" ? "輸入你想食咩…" : "Type what you want to eat…"}
               className="h-11 rounded-full pr-4"
             />
+            {dictationHint ? (
+              <p className="mt-1 px-2 text-[11px] text-muted-foreground">{dictationHint}</p>
+            ) : null}
           </div>
           <Button
             type="button"
@@ -293,7 +324,7 @@ export function AiChatClient() {
             onClick={handleMic}
             aria-label={locale === "zh-HK" ? "語音輸入" : "Voice input"}
           >
-            {isListening ? <Bot className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {isListening ? <Bot className="h-4 w-4 animate-pulse" /> : <Mic className="h-4 w-4" />}
           </Button>
         </div>
       </div>
